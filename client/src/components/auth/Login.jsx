@@ -26,15 +26,16 @@ const Login = () => {
 
     try {
       const result = await login(email, password, role);
-      
+
       if (result.success) {
         const successMsg = `Welcome back! Redirecting to ${role} dashboard...`;
         setSuccess(successMsg);
         toast.success(successMsg);
-        
+
         // Redirect after a short delay to show success message
         setTimeout(() => {
-          const dashboardPath = role === "supplier" ? "/dashboard/supplier" : "/dashboard/vendor";
+          const dashboardPath =
+            role === "supplier" ? "/dashboard/supplier" : "/dashboard/vendor";
           navigate(dashboardPath);
         }, 1500);
       } else {
@@ -58,21 +59,21 @@ const Login = () => {
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#363636',
-            color: '#fff',
+            background: "#363636",
+            color: "#fff",
           },
           success: {
             duration: 3000,
             iconTheme: {
-              primary: '#10B981',
-              secondary: '#fff',
+              primary: "#10B981",
+              secondary: "#fff",
             },
           },
           error: {
             duration: 4000,
             iconTheme: {
-              primary: '#EF4444',
-              secondary: '#fff',
+              primary: "#EF4444",
+              secondary: "#fff",
             },
           },
         }}
@@ -295,14 +296,18 @@ const Login = () => {
                       <div className="ml-3">
                         <span
                           className={`block text-sm font-medium ${
-                            role === "vendor" ? "text-blue-900" : "text-gray-900"
+                            role === "vendor"
+                              ? "text-blue-900"
+                              : "text-gray-900"
                           }`}
                         >
                           Vendor
                         </span>
                         <span
                           className={`block text-xs ${
-                            role === "vendor" ? "text-blue-700" : "text-gray-500"
+                            role === "vendor"
+                              ? "text-blue-700"
+                              : "text-gray-500"
                           }`}
                         >
                           Buy products
@@ -416,7 +421,7 @@ const Login = () => {
           {/* Footer */}
           <div className="mt-8 text-center">
             <p className="text-xs text-gray-500">
-              © 2024 SupplyMitra. All rights reserved.
+              © 2025 SupplyMitra. All rights reserved.
             </p>
           </div>
         </div>

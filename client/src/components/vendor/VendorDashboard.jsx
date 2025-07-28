@@ -866,7 +866,8 @@ const VendorDashboard = () => {
             >
               {t("vendorDashboard.searchProducts")} ({materials?.length || 0})
             </button>
-            <button
+            {/* Orders tab removed - already present in vendor profile section */}
+            {/* <button
               onClick={() => setActiveTab("orders")}
               className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === "orders"
@@ -875,7 +876,7 @@ const VendorDashboard = () => {
               }`}
             >
               Orders ({orders?.length || 0})
-            </button>
+            </button> */}
 
           </nav>
         </div>

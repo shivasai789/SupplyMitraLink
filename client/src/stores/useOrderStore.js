@@ -45,17 +45,13 @@ const useOrderStore = create((set, get) => ({
   fetchSupplierOrders: async () => {
     try {
       set({ loading: true, error: null });
-      console.log('🔍 Fetching supplier orders...');
       const response = await supplierAPI.getSupplierOrders();
-      console.log('🔍 Supplier orders response:', response);
       const ordersData = response.data || [];
-      console.log('🔍 Orders data:', ordersData);
       
       // Filter active orders (pending, confirmed, packed, in_transit, out_for_delivery)
       const activeOrdersData = ordersData.filter(order => 
         ['pending', 'confirmed', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status)
       );
-      console.log('🔍 Active orders data:', activeOrdersData);
       
       set({ 
         orders: ordersData, 
@@ -64,7 +60,6 @@ const useOrderStore = create((set, get) => ({
       });
       return response.data;
     } catch (error) {
-      console.error('❌ Error fetching supplier orders:', error);
       set({ error: error.message, loading: false });
       throw error;
     }

@@ -37,8 +37,6 @@ const SupplierDetailView = () => {
 
   const fetchSupplierData = async () => {
     try {
-      console.log('🔍 Fetching supplier data for:', supplierId);
-      
       // Fetch supplier details
       const details = await getSupplierDetails(supplierId);
       setSupplierDetails(details);
@@ -51,7 +49,7 @@ const SupplierDetailView = () => {
       const performance = await getSupplierPerformance(supplierId);
       setSupplierPerformance(performance);
     } catch (error) {
-      console.error('❌ Error fetching supplier data:', error);
+      // Handle error silently
     }
   };
 

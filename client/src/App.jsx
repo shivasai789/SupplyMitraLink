@@ -25,6 +25,8 @@ import SupplierPublicView from "./components/vendor/SupplierPublicView";
 import SupplierDetailView from "./components/vendor/SupplierDetailView";
 import PredictionPage from "./pages/PredictionPage";
 import { useAuthState, useAuthActions } from "./stores/useAuthStore";
+import { Toaster } from "react-hot-toast";
+import Loader from "./components/common/Loader";
 import "./i18n";
 
 // Auth Initializer Component
@@ -44,10 +46,7 @@ const AuthInitializer = ({ children }) => {
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Initializing...</p>
-        </div>
+        <Loader text="Initializing..." />
       </div>
     );
   }
@@ -60,6 +59,30 @@ export default function App() {
     <AuthInitializer>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ScrollToTop />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: "#10B981",
+                secondary: "#fff",
+              },
+            },
+            error: {
+              duration: 4000,
+              iconTheme: {
+                primary: "#EF4444",
+                secondary: "#fff",
+              },
+            },
+          }}
+        />
         <Routes>
             {/* Public Routes */}
             <Route

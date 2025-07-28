@@ -14,6 +14,8 @@ import { useAuthStore } from "../../stores/useAuthStore";
 import { useSupplierStore } from "../../stores/useSupplierStore";
 import { useOrderStore } from "../../stores/useOrderStore";
 import apiService from "../../services/api";
+import { toast } from "react-hot-toast";
+import Loader from "../common/Loader";
 
 // Fix for default markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -178,13 +180,9 @@ const SupplierProfile = () => {
 
   const handleSaveProfile = async () => {
     try {
-      console.log("🔍 Updating profile with data:", editForm);
-      console.log("🔍 Current user:", user);
-      console.log("🔍 updateUser function:", typeof updateUser);
-      
       // Validate form data
       if (!editForm.fullname || !editForm.email) {
-        alert("Please fill in all required fields (Name and Email)");
+        toast.error("Please fill in all required fields (Name and Email)");
         return;
       }
       
@@ -192,7 +190,6 @@ const SupplierProfile = () => {
       
       // Update profile via API using the store function
       const response = await updateProfile(editForm);
-      console.log("✅ Profile update response:", response);
       
       // Update local user state with the updated profile data
       if (response?.data) {
@@ -200,18 +197,15 @@ const SupplierProfile = () => {
           ...user,
           ...response.data
         };
-        console.log("🔍 Updating user with:", updatedUserData);
         updateUser(updatedUserData);
         
-        alert(t("supplierProfile.profileUpdated") || "Profile updated successfully!");
+        toast.success(t("supplierProfile.profileUpdated") || "Profile updated successfully!");
         setShowEditProfile(false);
       } else {
-        console.error("❌ No data in response:", response);
         throw new Error("Failed to update profile - no data received. Response: " + JSON.stringify(response));
       }
     } catch (error) {
-      console.error("❌ Update profile error:", error);
-      alert("Failed to update profile: " + error.message);
+      toast.error("Failed to update profile: " + error.message);
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -232,11 +226,9 @@ const SupplierProfile = () => {
       // First, get the current order to check its status
       const currentOrder = orders.find(order => order._id === orderId);
       if (!currentOrder) {
-        alert("Order not found");
+        toast.error("Order not found");
         return;
       }
-      
-      console.log(`🔄 Attempting to update order ${orderId} from status "${currentOrder.status}" with action "${action}"`);
       
       switch (action) {
         case "accept":
@@ -251,7 +243,7 @@ const SupplierProfile = () => {
             await apiService.post(`/order/supplier/${orderId}/reject`, { reason: reason.trim() });
             successMessage = t("supplierProfile.statusUpdate.rejectedSuccess");
           } else if (reason !== null) {
-            alert(t("supplierProfile.rejectionReasonRequired"));
+            toast.error(t("supplierProfile.rejectionReasonRequired"));
             return;
           } else {
             return; // User cancelled
@@ -283,20 +275,19 @@ const SupplierProfile = () => {
           successMessage = t("supplierProfile.statusUpdate.deliveryComplete");
           break;
         default:
-          alert("Invalid action");
+          toast.error("Invalid action");
           return;
       }
       
       // Show success message
-      alert(successMessage);
+      toast.success(successMessage);
       
       // Refresh orders data
       await fetchOrders();
       
     } catch (error) {
-      console.error("❌ Error updating order status:", error);
       const errorMessage = error.response?.data?.message || error.message || "Failed to update order status";
-      alert("Failed to update order status: " + errorMessage);
+      toast.error("Failed to update order status: " + errorMessage);
     }
   };
 

@@ -18,13 +18,10 @@ export const useVendorStore = create(
         set({ loading: true, error: null });
         
         try {
-          console.log('🔍 Fetching vendor profile...');
           const response = await vendorAPI.getProfile();
-          console.log('✅ Profile response:', response);
           set({ profile: response.data, loading: false });
           return response.data;
         } catch (error) {
-          console.error('❌ Error fetching profile:', error);
           set({ error: error.message, loading: false });
           throw error;
         }
@@ -51,11 +48,9 @@ export const useVendorStore = create(
           const response = await vendorAPI.getAllMaterials();
           // Extract the data array from the API response
           const materialsData = response?.data || response || [];
-          console.log('📦 Materials fetched:', materialsData.length, 'items');
           set({ materials: materialsData, loading: false });
           return response;
         } catch (error) {
-          console.error('❌ Error fetching materials:', error);
           set({ error: error.message, loading: false });
           throw error;
         }
@@ -202,13 +197,10 @@ export const useVendorStore = create(
         set({ loading: true, error: null });
         
         try {
-          console.log('🔍 Fetching supplier details for:', supplierId);
           const response = await vendorAPI.getSupplierDetails(supplierId);
-          console.log('✅ Supplier details response:', response);
           set({ loading: false });
           return response.data;
         } catch (error) {
-          console.error('❌ Error fetching supplier details:', error);
           set({ error: error.message, loading: false });
           throw error;
         }
@@ -218,13 +210,10 @@ export const useVendorStore = create(
         set({ loading: true, error: null });
         
         try {
-          console.log('🔍 Fetching supplier products for:', supplierId);
           const response = await vendorAPI.getSupplierProducts(supplierId);
-          console.log('✅ Supplier products response:', response);
           set({ loading: false });
           return response.data;
         } catch (error) {
-          console.error('❌ Error fetching supplier products:', error);
           set({ error: error.message, loading: false });
           throw error;
         }
@@ -234,13 +223,10 @@ export const useVendorStore = create(
         set({ loading: true, error: null });
         
         try {
-          console.log('🔍 Fetching supplier performance for:', supplierId);
           const response = await vendorAPI.getSupplierPerformance(supplierId);
-          console.log('✅ Supplier performance response:', response);
           set({ loading: false });
           return response.data;
         } catch (error) {
-          console.error('❌ Error fetching supplier performance:', error);
           set({ error: error.message, loading: false });
           throw error;
         }

@@ -3,6 +3,8 @@ import { useAuthStore } from "../../stores/useAuthStore";
 import { useTranslation } from "react-i18next";
 import SupplierHeader from "./SupplierHeader";
 import { useSupplierStore } from "../../stores/useSupplierStore";
+import { toast } from "react-hot-toast";
+import Loader from "../common/Loader";
 
 const SupplierItems = () => {
   const { user } = useAuthStore();
@@ -40,39 +42,17 @@ const SupplierItems = () => {
   useEffect(() => {
     const loadMaterials = async () => {
       if (user?.token) {
-        console.log("🔄 Fetching materials for user:", user.email);
         try {
           const response = await fetchMaterials();
-          console.log("📦 Received materials response:", response);
-          if (response?.data && Array.isArray(response.data)) {
-            console.log("📋 Materials count:", response.data.length);
-            if (response.data.length > 0) {
-              console.log("📋 First item structure:", response.data[0]);
-            }
-          }
         } catch (error) {
-          console.error("❌ Error fetching materials:", error);
-          // Show user-friendly error message
-          alert("Failed to fetch materials: " + error.message);
+          toast.error("Failed to fetch materials: " + error.message);
         }
-      } else {
-        console.log("⚠️ No user token available, skipping materials fetch");
       }
     };
 
     // Always try to load materials when component mounts or user changes
     loadMaterials();
   }, [user?.token, fetchMaterials]);
-
-  // Also fetch materials when component mounts regardless of user state
-  useEffect(() => {
-    console.log("🚀 SupplierItems component mounted");
-    if (user?.token) {
-      console.log("✅ User authenticated, materials should be loading...");
-    } else {
-      console.log("❌ No user token found");
-    }
-  }, []);
 
   // Show loading state
   if (loading) {
@@ -81,10 +61,7 @@ const SupplierItems = () => {
         <SupplierHeader />
         <main className="p-6">
           <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading materials...</p>
-            </div>
+            <Loader text="Loading materials..." />
           </div>
         </main>
       </div>
@@ -129,7 +106,7 @@ const SupplierItems = () => {
         await createMaterial(newItem);
         // Refresh the materials list after successful creation
         await fetchMaterials();
-        alert("Item added successfully!");
+        toast.success("Item added successfully!");
         setFormData({
           name: "",
           price: "",
@@ -142,10 +119,10 @@ const SupplierItems = () => {
         setUploadedImages([]);
         setShowAddForm(false);
       } catch (error) {
-        alert("Failed to add item: " + error.message);
+        toast.error("Failed to add item: " + error.message);
       }
     } else {
-      alert("Please fill in all required fields (name, price, quantity)");
+      toast.error("Please fill in all required fields (name, price, quantity)");
     }
   };
 
@@ -169,7 +146,7 @@ const SupplierItems = () => {
       try {
         const itemId = editingItem._id || editingItem.id;
         if (!itemId) {
-          alert("Error: Item ID is missing. Cannot update item.");
+          toast.error("Error: Item ID is missing. Cannot update item.");
           return;
         }
         
@@ -182,14 +159,13 @@ const SupplierItems = () => {
           images: formData.images,
         };
         
-        console.log("Updating item with ID:", itemId);
         await updateMaterial(
           itemId,
           updatedItem
         );
         // Refresh the materials list after successful update
         await fetchMaterials();
-        alert("Item updated successfully!");
+        toast.success("Item updated successfully!");
         setFormData({
           name: "",
           price: "",
@@ -203,29 +179,27 @@ const SupplierItems = () => {
         setEditingItem(null);
         setShowAddForm(false);
       } catch (error) {
-        alert("Failed to update item: " + error.message);
+        toast.error("Failed to update item: " + error.message);
       }
     } else {
-      alert("Please fill in all required fields (name, price, quantity)");
+      toast.error("Please fill in all required fields (name, price, quantity)");
     }
   };
 
   const handleDeleteItem = async (id) => {
     if (!id) {
-      alert("Error: Item ID is missing. Cannot delete item.");
+      toast.error("Error: Item ID is missing. Cannot delete item.");
       return;
     }
     
     if (window.confirm("Are you sure you want to delete this item?")) {
       try {
-        console.log("Deleting item with ID:", id);
         await deleteMaterial(id);
         // Refresh the materials list after successful deletion
         await fetchMaterials();
-        alert("Item deleted successfully!");
+        toast.success("Item deleted successfully!");
       } catch (error) {
-        console.error("Delete error:", error);
-        alert("Failed to delete item: " + error.message);
+        toast.error("Failed to delete item: " + error.message);
       }
     }
   };
@@ -240,7 +214,7 @@ const SupplierItems = () => {
     );
     
     if (validFiles.length + selectedFiles.length > 5) {
-      alert("You can only upload up to 5 images");
+      toast.error("You can only upload up to 5 images");
       return;
     }
     
@@ -262,7 +236,7 @@ const SupplierItems = () => {
       setFormData(prev => ({ ...prev, images: newUploadedImages }));
       setSelectedFiles([]);
     } catch (error) {
-      alert("Failed to upload images: " + error.message);
+      toast.error("Failed to upload images: " + error.message);
     } finally {
       setIsUploading(false);
     }

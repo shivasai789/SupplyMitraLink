@@ -14,6 +14,8 @@ import { useAuthStore } from "../../stores/useAuthStore";
 import { useVendorStore } from "../../stores/useVendorStore";
 import { useOrderStore } from "../../stores/useOrderStore";
 import ApiService from "../../services/api";
+import { toast } from "react-hot-toast";
+import Loader from "../common/Loader";
 
 // Fix for default markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -64,35 +66,14 @@ const VendorProfile = () => {
   // Use real orders from API, with fallback to empty array
   const realOrders = orders || [];
 
-  // Debug log for profile data
-  useEffect(() => {
-    if (vendorProfile) {
-      console.log("✅ Vendor profile loaded:", vendorProfile);
-    }
-  }, [vendorProfile]);
-
-  // Debug log for orders data
-  useEffect(() => {
-    if (realOrders && realOrders.length > 0) {
-      console.log("✅ Orders loaded:", realOrders.length, "orders");
-      console.log("📦 Sample order:", realOrders[0]);
-    } else if (realOrders && realOrders.length === 0) {
-      console.log("⚠️ No orders found");
-    }
-  }, [realOrders]);
-
   // Fetch complete profile data if needed
   const fetchCompleteProfile = async () => {
     if (user?.token) {
       try {
-        console.log("🔄 Fetching complete profile data...");
         await fetchProfile(user.token);
-        console.log("✅ Profile data fetched successfully");
       } catch (error) {
-        console.error("❌ Failed to fetch complete profile:", error);
+        // Handle error silently or with toast if needed
       }
-    } else {
-      console.log("⚠️ No user token available for profile fetch");
     }
   };
 
@@ -100,11 +81,9 @@ const VendorProfile = () => {
   const fetchMaterialReviews = async (materialId) => {
     if (user?.token && materialId) {
       try {
-        console.log("🔄 Fetching reviews for material:", materialId);
         const response = await getReviews(materialId, user.token);
         return response || [];
       } catch (error) {
-        console.error("❌ Failed to fetch reviews:", error);
         return [];
       }
     }
@@ -113,12 +92,7 @@ const VendorProfile = () => {
 
   // Fetch complete profile data and orders on component mount
   useEffect(() => {
-    console.log("🚀 VendorProfile useEffect triggered:", { 
-      hasToken: !!user?.token, 
-      user: !!user 
-    });
     if (user?.token) {
-      console.log("📞 Calling fetchCompleteProfile and fetchVendorOrders...");
       fetchCompleteProfile();
       fetchVendorOrders();
     }
@@ -213,15 +187,13 @@ const VendorProfile = () => {
   const handleSaveProfile = async () => {
     try {
       if (user?.token) {
-        console.log("🔄 Updating vendor profile...");
         await updateProfile(editForm, user.token);
         updateUser(editForm); // Update user in auth store
-        alert("Profile updated successfully!");
+        toast.success("Profile updated successfully!");
         setShowEditProfile(false);
       }
     } catch (error) {
-      console.error("❌ Update profile error:", error);
-      alert("Failed to update profile: " + error.message);
+      toast.error("Failed to update profile: " + error.message);
     }
   };
 
@@ -1254,7 +1226,7 @@ const VendorProfile = () => {
                         try {
                           const order = realOrders.find((o) => o._id === showReviewForm);
                           if (!order) {
-                            alert("Order not found!");
+                            toast.error("Order not found!");
                             return;
                           }
 
@@ -1265,8 +1237,6 @@ const VendorProfile = () => {
                             rating: reviewForm.rating,
                             comment: reviewForm.comment,
                           };
-
-                          console.log("🔄 Submitting review:", reviewData);
                           
                           // Submit review to API
                           await createReview(reviewData, user.token);
@@ -1282,11 +1252,10 @@ const VendorProfile = () => {
                             },
                           ]);
                           
-                          alert("Review submitted successfully!");
+                          toast.success("Review submitted successfully!");
                           setShowReviewForm(null);
                         } catch (error) {
-                          console.error("❌ Review submission error:", error);
-                          alert("Failed to submit review: " + error.message);
+                          toast.error("Failed to submit review: " + error.message);
                         }
                       }}
                     className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors duration-200"

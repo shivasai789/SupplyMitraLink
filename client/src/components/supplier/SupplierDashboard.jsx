@@ -6,6 +6,8 @@ import { useSupplierStore } from "../../stores/useSupplierStore";
 import { useOrderStore } from "../../stores/useOrderStore";
 import SupplierHeader from "./SupplierHeader";
 import SupplierMap from "./SupplierMap";
+import { toast } from "react-hot-toast";
+import Loader from "../common/Loader";
 
 const SupplierDashboard = () => {
   const { user, token, logout } = useAuthStore();
@@ -39,28 +41,19 @@ const SupplierDashboard = () => {
 
   // Single useEffect for data fetching - Updated for new API structure
   useEffect(() => {
-    console.log("🔍 useEffect triggered");
-    console.log("🔍 User token:", token ? "Present" : "Missing");
-    console.log("🔍 User:", user);
-    
     if (!token) {
-      console.log("🔍 No user token, returning early");
       return; // Let route protection handle redirect
     }
 
     const fetchDashboardData = async () => {
-      console.log("🔍 fetchDashboardData called");
       try {
-        console.log("🔍 Calling API functions...");
         await Promise.all([
           fetchProfile(),
           fetchMaterials(),
           fetchSupplierOrders(),
           fetchMapOrders()
         ]);
-        console.log("🔍 All API calls completed");
       } catch (error) {
-        console.error("❌ Error in fetchDashboardData:", error);
         // Only handle auth errors, let other errors bubble up
         if (error.message && (
           error.message.includes('not authorized') || 
@@ -77,15 +70,6 @@ const SupplierDashboard = () => {
 
     fetchDashboardData();
   }, [token, fetchProfile, fetchMaterials, fetchSupplierOrders, fetchMapOrders, logout]);
-
-  // Debug useEffect to log orders data
-  useEffect(() => {
-    console.log("🔍 Debug - Orders state:", orders);
-    console.log("🔍 Debug - Active orders state:", activeOrders);
-    console.log("🔍 Debug - User:", user);
-    console.log("🔍 Debug - Orders loading:", ordersLoading);
-    console.log("🔍 Debug - Orders error:", ordersError);
-  }, [orders, activeOrders, user, ordersLoading, ordersError]);
 
   // Loading state
   const isLoading = supplierLoading || ordersLoading;
@@ -337,9 +321,9 @@ const SupplierDashboard = () => {
         "mark-delivered": "Order marked as delivered!",
       };
 
-      alert(actionMessages[action] || "Order status updated!");
+      toast.success(actionMessages[action] || "Order status updated!");
     } catch (error) {
-      alert("Failed to update order status. Please try again.");
+      toast.error("Failed to update order status. Please try again.");
     }
   };
 
@@ -371,10 +355,7 @@ const SupplierDashboard = () => {
         <SupplierHeader />
         <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading dashboard data...</p>
-            </div>
+            <Loader text="Loading dashboard data..." />
           </div>
         </main>
       </div>

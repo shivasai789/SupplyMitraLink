@@ -48,8 +48,6 @@ const SupplierPublicView = () => {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Fetching supplier data for:', supplierId);
-      
       // Fetch supplier details, products, and performance in parallel
       const [detailsResult, productsResult, performanceResult] = await Promise.allSettled([
         getSupplierDetails(supplierId),
@@ -59,27 +57,18 @@ const SupplierPublicView = () => {
 
       // Handle supplier details
       if (detailsResult.status === 'fulfilled') {
-        console.log('✅ Supplier details:', detailsResult.value);
         setSupplier(detailsResult.value.supplier || detailsResult.value);
-      } else {
-        console.error('❌ Failed to fetch supplier details:', detailsResult.reason);
       }
 
       // Handle supplier products
       if (productsResult.status === 'fulfilled') {
-        console.log('✅ Supplier products:', productsResult.value);
         const productsData = productsResult.value.materials || productsResult.value || [];
         setProducts(productsData);
-      } else {
-        console.error('❌ Failed to fetch supplier products:', productsResult.reason);
       }
 
       // Handle supplier performance
       if (performanceResult.status === 'fulfilled') {
-        console.log('✅ Supplier performance:', performanceResult.value);
         setPerformance(performanceResult.value);
-      } else {
-        console.error('❌ Failed to fetch supplier performance:', performanceResult.reason);
       }
 
     } catch (error) {

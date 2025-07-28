@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSupplierStore } from '../../stores/useSupplierStore';
 import SupplierHeader from './SupplierHeader';
+import { toast } from 'react-hot-toast';
+import Loader from '../common/Loader';
 
 const SupplierInventory = () => {
   const { t } = useTranslation();
@@ -36,7 +38,7 @@ const SupplierInventory = () => {
 
   const handleBulkUpdate = async () => {
     if (selectedMaterials.length === 0) {
-      alert('Please select materials to update');
+      toast.error('Please select materials to update');
       return;
     }
 
@@ -47,12 +49,12 @@ const SupplierInventory = () => {
 
     try {
       await bulkUpdateInventory(updates);
-      alert('Inventory updated successfully!');
+      toast.success('Inventory updated successfully!');
       setSelectedMaterials([]);
       setBulkUpdateData({});
       fetchInventory(); // Refresh data
     } catch (error) {
-      alert('Failed to update inventory: ' + error.message);
+      toast.error('Failed to update inventory: ' + error.message);
     }
   };
 
@@ -92,10 +94,7 @@ const SupplierInventory = () => {
         <SupplierHeader />
         <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading inventory data...</p>
-            </div>
+            <Loader text="Loading inventory data..." />
           </div>
         </main>
       </div>

@@ -5,6 +5,7 @@ import { useCartStore } from '../../stores/useCartStore';
 import { useOrderStore } from '../../stores/useOrderStore';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { vendorAPI } from '../../services/api';
+import { toast } from 'react-hot-toast';
 
 const Checkout = () => {
   const { t } = useTranslation();
@@ -98,8 +99,7 @@ const Checkout = () => {
         }
       });
     } catch (error) {
-      console.error('Error placing order:', error);
-      alert('Failed to place order. Please try again.');
+      toast.error('Failed to place order. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

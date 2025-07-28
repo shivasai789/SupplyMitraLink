@@ -9,6 +9,8 @@ import { useOrderStore } from "../../stores/useOrderStore";
 import { useCartStore } from "../../stores/useCartStore";
 import QuantityModal from "../common/QuantityModal";
 import Toast from "../common/Toast";
+import { toast } from "react-hot-toast";
+import Loader from "../common/Loader";
 
 // --- SupplierProfilePreview Component ---
 const SupplierProfilePreview = ({ supplier, products, onClose }) => {
@@ -374,15 +376,11 @@ const VendorDashboard = () => {
   useEffect(() => {
     const { token } = useAuthStore.getState();
     if (!token) {
-      console.log('❌ No user token, skipping initialization');
       return; // Let route protection handle redirect
     }
 
-    console.log('🔍 Starting initialization with token:', token ? 'present' : 'missing');
-
     // Fetch initial data
     const fetchInitialData = async () => {
-      console.log('🚀 Starting to fetch initial data...');
       setIsInitializing(true);
       
       try {
@@ -392,20 +390,13 @@ const VendorDashboard = () => {
           fetchAllMaterials()
         ]);
 
-        console.log('✅ Profile fetch result:', profileResult.status);
-        console.log('✅ Materials fetch result:', materialsResult.status);
-
         // Fetch orders and cart in background (non-blocking)
         Promise.allSettled([
           fetchVendorOrders(),
           fetchCartItems()
-        ]).then(([ordersResult, cartResult]) => {
-          console.log('✅ Orders fetch result:', ordersResult.status);
-          console.log('✅ Cart fetch result:', cartResult.status);
-        });
+        ]);
         
       } catch (error) {
-        console.error('❌ Error in fetchInitialData:', error);
         // Don't logout for general errors, only auth errors
         if (error.message && (
           error.message.includes('not authorized') || 
@@ -414,18 +405,15 @@ const VendorDashboard = () => {
           error.message.includes('403') ||
           error.message.includes('token')
         )) {
-          console.log('🔐 Auth error detected, logging out...');
           logout();
         }
       } finally {
-        console.log('🏁 Setting isInitializing to false');
         setIsInitializing(false);
       }
     };
 
     // Add timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
-      console.log('⏰ Timeout reached, forcing dashboard to load');
       setIsInitializing(false);
     }, 5000); // 5 second timeout
 
@@ -767,32 +755,12 @@ const VendorDashboard = () => {
   // Loading state
   const isLoading = isInitializing || loading;
 
-  // Debug logging
-  const { token } = useAuthStore.getState();
-  console.log('🔍 VendorDashboard Debug:', {
-    isInitializing,
-    loading,
-    isLoading,
-    error,
-    user: !!user,
-    token: !!token,
-    profile: !!profile,
-    materials: materials?.length || 0,
-    orders: orders?.length || 0,
-    cartItems: cartItems?.length || 0
-  });
+
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
-          <p className="mt-2 text-sm text-gray-500">
-            isInitializing: {isInitializing ? 'true' : 'false'} | 
-            loading: {loading ? 'true' : 'false'}
-          </p>
-        </div>
+        <Loader size="xlarge" text="Loading dashboard..." />
       </div>
     );
   }

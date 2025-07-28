@@ -78,21 +78,16 @@ class ApiService {
   getAuthToken() {
     // Get token from auth store instead of localStorage
     const authStorage = localStorage.getItem('auth-storage');
-    console.log('🔍 Raw auth storage:', authStorage ? 'present' : 'null');
     
     if (authStorage) {
       try {
         const authData = JSON.parse(authStorage);
-        console.log('🔍 Parsed auth data:', authData);
         const token = authData.state?.token || null;
-        console.log('🔍 Extracted token:', token ? `${token.substring(0, 20)}...` : 'null');
         return token;
       } catch (error) {
-        console.error('Error parsing auth storage:', error);
         return null;
       }
     }
-    console.log('🔍 No auth storage found');
     return null;
   }
 
@@ -101,7 +96,6 @@ class ApiService {
    */
   setAuthToken(token) {
     // This method is kept for compatibility but the token is managed by the auth store
-    console.log('API Service: Token set to', token ? 'present' : 'null');
   }
 
   /**
@@ -114,7 +108,6 @@ class ApiService {
 
     if (includeAuth) {
       const token = this.getAuthToken();
-      console.log('🔍 API Headers - Token present:', !!token, 'Token length:', token?.length);
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
@@ -252,7 +245,6 @@ class ApiService {
 
     // Get the token directly
     const token = this.getAuthToken();
-    console.log('🔍 Single Upload - Token present:', !!token);
 
     // Create headers manually for file upload
     const headers = {};
@@ -282,8 +274,6 @@ class ApiService {
 
     // Get the token directly
     const token = this.getAuthToken();
-    console.log('🔍 Upload - Token present:', !!token);
-    console.log('🔍 Upload - Token length:', token?.length);
 
     // Create headers manually for file upload
     const headers = {};
@@ -291,8 +281,6 @@ class ApiService {
       headers['Authorization'] = `Bearer ${token}`;
     }
     // Don't set Content-Type - let browser set it for FormData
-
-    console.log('🔍 Upload Headers:', headers);
 
     return this.makeRequest(`${this.baseURL}${endpoint}`, {
       method: 'POST',
@@ -324,9 +312,7 @@ class ApiService {
    * Get user profile
    */
   async getUserProfile() {
-    console.log('🌐 API: getUserProfile called');
     const result = await this.get('/user/profile');
-    console.log('📥 API: getUserProfile response:', result);
     return result;
   }
 
@@ -334,9 +320,7 @@ class ApiService {
    * Update user profile
    */
   async updateUserProfile(updates) {
-    console.log('🌐 API: updateUserProfile called with:', updates);
     const result = await this.put('/user/profile', updates);
-    console.log('📥 API: updateUserProfile response:', result);
     return result;
   }
 
@@ -346,9 +330,7 @@ class ApiService {
    * Get all materials (supplier's own materials)
    */
   async getMaterials() {
-    console.log('🌐 API: getMaterials called');
     const result = await this.get('/material');
-    console.log('📥 API: getMaterials response:', result);
     return result;
   }
 
@@ -363,9 +345,7 @@ class ApiService {
    * Create material (Supplier only)
    */
   async createMaterial(materialData) {
-    console.log('🌐 API: createMaterial called with:', materialData);
     const result = await this.post('/material', materialData);
-    console.log('📥 API: createMaterial response:', result);
     return result;
   }
 
@@ -373,9 +353,7 @@ class ApiService {
    * Update material (Supplier only)
    */
   async updateMaterial(materialId, updates) {
-    console.log('🌐 API: updateMaterial called with:', { materialId, updates });
     const result = await this.put(`/material/${materialId}`, updates);
-    console.log('📥 API: updateMaterial response:', result);
     return result;
   }
 
@@ -383,9 +361,7 @@ class ApiService {
    * Delete material (Supplier only)
    */
   async deleteMaterial(materialId) {
-    console.log('🌐 API: deleteMaterial called with:', materialId);
     const result = await this.delete(`/material/${materialId}`);
-    console.log('📥 API: deleteMaterial response:', result);
     return result;
   }
 
@@ -617,15 +593,12 @@ export const vendorAPI = {
   
   // Supplier detail APIs
   getSupplierDetails: (supplierId) => {
-    console.log('🌐 API: getSupplierDetails called with supplierId:', supplierId);
     return apiService.get(`/user/supplier/${supplierId}/details`);
   },
   getSupplierProducts: (supplierId) => {
-    console.log('🌐 API: getSupplierProducts called with supplierId:', supplierId);
     return apiService.get(`/user/supplier/${supplierId}/products`);
   },
   getSupplierPerformance: (supplierId) => {
-    console.log('🌐 API: getSupplierPerformance called with supplierId:', supplierId);
     return apiService.get(`/user/supplier/${supplierId}/performance`);
   },
   getAllSuppliersPerformance: () => apiService.get('/user/suppliers/performance'),

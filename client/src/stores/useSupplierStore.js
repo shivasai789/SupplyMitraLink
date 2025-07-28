@@ -35,14 +35,11 @@ export const useSupplierStore = create(
         set({ loading: true, error: null });
         
         try {
-          console.log('🔍 Updating profile with:', updates);
           const response = await supplierAPI.updateProfile(updates);
-          console.log('✅ Profile update response:', response);
           
           set({ profile: response.data, loading: false });
           return response; // Return the full response object
         } catch (error) {
-          console.error('❌ Error updating profile:', error);
           set({ error: error.message, loading: false });
           throw error;
         }
@@ -53,18 +50,14 @@ export const useSupplierStore = create(
         set({ loading: true, error: null });
         
         try {
-          console.log('🔍 Fetching materials from API...');
           const response = await supplierAPI.getMaterials();
-          console.log('📦 API Response:', response);
           
           // Extract the data array from the API response
           const materialsData = response?.data || response || [];
-          console.log('📋 Materials data:', materialsData);
           
           set({ materials: materialsData, loading: false });
           return response;
         } catch (error) {
-          console.error('❌ Error in fetchMaterials:', error);
           set({ error: error.message, loading: false });
           throw error;
         }
@@ -74,9 +67,7 @@ export const useSupplierStore = create(
         set({ loading: true, error: null });
         
         try {
-          console.log('🔍 Creating material:', materialData);
           const response = await supplierAPI.createMaterial(materialData);
-          console.log('✅ Material created:', response);
           
           // Add the new material to the local state
           if (response?.data) {
@@ -90,7 +81,6 @@ export const useSupplierStore = create(
           
           return response;
         } catch (error) {
-          console.error('❌ Error creating material:', error);
           set({ error: error.message, loading: false });
           throw error;
         }
@@ -100,9 +90,7 @@ export const useSupplierStore = create(
         set({ loading: true, error: null });
         
         try {
-          console.log('🔍 Updating material:', materialId, updates);
           const response = await supplierAPI.updateMaterial(materialId, updates);
-          console.log('✅ Material updated:', response);
           
           // Update the material in local state
           if (response?.data) {
@@ -118,7 +106,6 @@ export const useSupplierStore = create(
           
           return response;
         } catch (error) {
-          console.error('❌ Error updating material:', error);
           set({ error: error.message, loading: false });
           throw error;
         }
@@ -128,9 +115,7 @@ export const useSupplierStore = create(
         set({ loading: true, error: null });
         
         try {
-          console.log('🔍 Deleting material:', materialId);
           const response = await supplierAPI.deleteMaterial(materialId);
-          console.log('✅ Material deleted:', response);
           
           // Remove the material from local state
           set(state => ({
@@ -140,7 +125,6 @@ export const useSupplierStore = create(
           
           return response;
         } catch (error) {
-          console.error('❌ Error deleting material:', error);
           set({ error: error.message, loading: false });
           throw error;
         }

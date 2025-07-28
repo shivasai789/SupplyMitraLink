@@ -155,24 +155,24 @@ const VendorHeader = ({ cart, showCart, setShowCart }) => {
                       <div className="max-h-64 overflow-y-auto">
                         {cart.map((item) => (
                           <div
-                            key={item.id}
+                            key={item._id}
                             className="px-4 py-2 border-b border-gray-100"
                           >
                             <div className="flex justify-between items-center">
                               <div className="flex-1">
                                 <p className="text-sm font-medium text-gray-900">
-                                  {item.name}
+                                  {item.materialId?.name || 'Unknown Item'}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {item.supplier?.name}
+                                  {item.supplierId?.fullname || 'Unknown Supplier'}
                                 </p>
                               </div>
                               <div className="text-right">
                                 <p className="text-sm font-medium text-gray-900">
-                                  ₹{item.price * item.quantity}
+                                  ₹{((item.materialId?.pricePerUnit || 0) * (item.quantity || 0)).toFixed(2)}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  Qty: {item.quantity}
+                                  Qty: {item.quantity || 0}
                                 </p>
                               </div>
                             </div>
@@ -185,7 +185,7 @@ const VendorHeader = ({ cart, showCart, setShowCart }) => {
                             {t("vendor.total")}:
                           </span>
                           <span className="text-sm font-bold text-gray-900">
-                            ₹{cartTotal}
+                            ₹{cartTotal.toFixed(2)}
                           </span>
                         </div>
                         <Link

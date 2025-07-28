@@ -5,10 +5,15 @@ import VendorHeader from '../components/vendor/VendorHeader';
 import DayStepForm from '../components/DayStepForm';
 import { getRecommendation, validatePredictionResponse } from '../utils/geminiAPI';
 import { buildPrompt } from '../utils/buildPrompt';
+import { useCartStore } from '../stores/useCartStore';
 
 const PredictionPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  
+  // Cart state management
+  const { cartItems, fetchCartItems } = useCartStore();
+  const [showCart, setShowCart] = useState(false);
   
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -34,6 +39,13 @@ const PredictionPage = () => {
       }
     }
   }, []);
+
+  // Fetch cart items on component mount
+  useEffect(() => {
+    fetchCartItems().catch(err => {
+      console.warn('Failed to fetch cart items:', err.message);
+    });
+  }, [fetchCartItems]);
 
   // Save prediction to localStorage whenever it changes
   useEffect(() => {
@@ -215,7 +227,7 @@ const PredictionPage = () => {
   if (prediction) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <VendorHeader />
+        <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
         
         <div className="max-w-6xl mx-auto px-4 py-8">
           {/* Saved Prediction Notice */}
@@ -422,7 +434,7 @@ const PredictionPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <VendorHeader />
+      <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
       
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}

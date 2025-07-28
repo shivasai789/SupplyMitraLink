@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useVendorStore } from "../../stores/useVendorStore";
+import { useCartStore } from "../../stores/useCartStore";
 import VendorHeader from "./VendorHeader";
 import QuantityModal from "../common/QuantityModal";
 import Toast from "../common/Toast";
@@ -15,8 +16,10 @@ const SupplierPublicView = () => {
   const [sort, setSort] = useState("priceLowHigh");
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
+  
+  // Cart state management
+  const { cartItems, addToCart: addToCartStore, removeFromCart: removeFromCartStore, fetchCartItems } = useCartStore();
   const [showQuantityModal, setShowQuantityModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -42,6 +45,13 @@ const SupplierPublicView = () => {
       fetchSupplierData();
     }
   }, [supplierId]);
+
+  // Fetch cart items on component mount
+  useEffect(() => {
+    fetchCartItems().catch(err => {
+      console.warn('Failed to fetch cart items:', err.message);
+    });
+  }, [fetchCartItems]);
 
   const fetchSupplierData = async () => {
     try {
@@ -157,18 +167,26 @@ const SupplierPublicView = () => {
   };
 
   // Cart functions
-  const addToCart = (product, quantity = 1) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item._id === product._id);
-      if (existingItem) {
-        return prevCart.map(item =>
-          item._id === product._id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      }
-      return [...prevCart, { ...product, quantity: quantity }];
-    });
+  const addToCart = async (product, quantity = 1) => {
+    try {
+      const cartData = {
+        materialId: product._id,
+        supplierId: supplier._id,
+        quantity: quantity
+      };
+      await addToCartStore(cartData);
+      setToast({
+        show: true,
+        message: `Added ${quantity} ${product.name} to cart`,
+        type: 'success'
+      });
+    } catch (error) {
+      setToast({
+        show: true,
+        message: 'Failed to add item to cart',
+        type: 'error'
+      });
+    }
   };
 
   const handleShowQuantityModal = (product) => {
@@ -176,30 +194,33 @@ const SupplierPublicView = () => {
     setShowQuantityModal(true);
   };
 
-  const handleQuantityConfirm = (quantity) => {
+  const handleQuantityConfirm = async (quantity) => {
     if (selectedProduct) {
-      addToCart(selectedProduct, quantity);
+      await addToCart(selectedProduct, quantity);
+    }
+  };
+
+  const removeFromCart = async (productId) => {
+    try {
+      await removeFromCartStore(productId);
+    } catch (error) {
       setToast({
         show: true,
-        message: `Added ${quantity} ${selectedProduct.name} to cart`,
-        type: 'success'
+        message: 'Failed to remove item from cart',
+        type: 'error'
       });
     }
   };
 
-  const removeFromCart = (productId) => {
-    setCart(prevCart => prevCart.filter(item => item._id !== productId));
-  };
-
   const handleCheckout = () => {
-    navigate("/checkout", { state: { cart } });
+    navigate("/checkout");
   };
 
   // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <VendorHeader cart={cart} showCart={showCart} setShowCart={setShowCart} />
+        <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-center items-center h-64">
             <div className="text-center">
@@ -216,7 +237,7 @@ const SupplierPublicView = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <VendorHeader cart={cart} showCart={showCart} setShowCart={setShowCart} />
+        <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-center items-center h-64">
             <div className="text-center">
@@ -240,7 +261,7 @@ const SupplierPublicView = () => {
   if (!supplier) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <VendorHeader cart={cart} showCart={showCart} setShowCart={setShowCart} />
+        <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-center items-center h-64">
             <div className="text-center">
@@ -262,7 +283,7 @@ const SupplierPublicView = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <VendorHeader cart={cart} showCart={showCart} setShowCart={setShowCart} />
+      <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}

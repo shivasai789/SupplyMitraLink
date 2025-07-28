@@ -13,6 +13,7 @@ import L from "leaflet";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useVendorStore } from "../../stores/useVendorStore";
 import { useOrderStore } from "../../stores/useOrderStore";
+import { useCartStore } from "../../stores/useCartStore";
 import ApiService from "../../services/api";
 import { toast } from "react-hot-toast";
 import Loader from "../common/Loader";
@@ -32,7 +33,9 @@ const VendorProfile = () => {
   const { t } = useTranslation();
   const { user, updateUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState("profile");
-  const [cart] = useState([]);
+  
+  // Cart state management
+  const { cartItems, fetchCartItems } = useCartStore();
   const [showCart, setShowCart] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showTrackOrder, setShowTrackOrder] = useState(null);
@@ -97,6 +100,13 @@ const VendorProfile = () => {
       fetchVendorOrders();
     }
   }, [user?.token, fetchProfile, fetchVendorOrders]);
+
+  // Fetch cart items on component mount
+  useEffect(() => {
+    fetchCartItems().catch(err => {
+      console.warn('Failed to fetch cart items:', err.message);
+    });
+  }, [fetchCartItems]);
 
   // Load reviews when reviews tab is accessed
   useEffect(() => {
@@ -307,7 +317,7 @@ const VendorProfile = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <VendorHeader
-          cart={cart}
+          cart={cartItems}
           showCart={showCart}
           setShowCart={setShowCart}
         />
@@ -326,7 +336,7 @@ const VendorProfile = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <VendorHeader
-          cart={cart}
+          cart={cartItems}
           showCart={showCart}
           setShowCart={setShowCart}
         />
@@ -354,7 +364,7 @@ const VendorProfile = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <VendorHeader
-          cart={cart}
+          cart={cartItems}
           showCart={showCart}
           setShowCart={setShowCart}
         />
@@ -381,7 +391,7 @@ const VendorProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <VendorHeader cart={cart} showCart={showCart} setShowCart={setShowCart} />
+      <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">

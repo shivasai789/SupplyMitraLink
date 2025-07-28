@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useVendorStore } from '../../stores/useVendorStore';
+import { useCartStore } from '../../stores/useCartStore';
 import VendorHeader from './VendorHeader';
 
 const SupplierDetailView = () => {
@@ -10,7 +11,9 @@ const SupplierDetailView = () => {
   const { id: supplierId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [cart] = useState([]);
+  
+  // Cart state management
+  const { cartItems, fetchCartItems } = useCartStore();
   const [showCart, setShowCart] = useState(false);
 
   // Use vendor store for supplier data
@@ -34,6 +37,13 @@ const SupplierDetailView = () => {
       fetchSupplierData();
     }
   }, [supplierId]);
+
+  // Fetch cart items on component mount
+  useEffect(() => {
+    fetchCartItems().catch(err => {
+      console.warn('Failed to fetch cart items:', err.message);
+    });
+  }, [fetchCartItems]);
 
   const fetchSupplierData = async () => {
     try {
@@ -84,7 +94,7 @@ const SupplierDetailView = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <VendorHeader cart={cart} showCart={showCart} setShowCart={setShowCart} />
+        <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
@@ -98,7 +108,7 @@ const SupplierDetailView = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <VendorHeader cart={cart} showCart={showCart} setShowCart={setShowCart} />
+        <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="text-red-500 text-6xl mb-4">⚠️</div>
@@ -119,7 +129,7 @@ const SupplierDetailView = () => {
   if (!supplierDetails) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <VendorHeader cart={cart} showCart={showCart} setShowCart={setShowCart} />
+        <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <div className="text-gray-500 text-6xl mb-4">🔍</div>
@@ -139,7 +149,7 @@ const SupplierDetailView = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <VendorHeader cart={cart} showCart={showCart} setShowCart={setShowCart} />
+      <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}

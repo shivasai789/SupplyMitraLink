@@ -4,11 +4,14 @@ import { useTranslation } from "react-i18next";
 import VendorHeader from "../vendor/VendorHeader";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useFeedbackStore } from "../../stores/useFeedbackStore";
+import { useCartStore } from "../../stores/useCartStore";
 
 const Feedback = () => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const [cart] = useState([]);
+  
+  // Cart state management
+  const { cartItems, fetchCartItems } = useCartStore();
   const [showCart, setShowCart] = useState(false);
 
   // Use feedback store
@@ -20,6 +23,13 @@ const Feedback = () => {
       fetchFeedback({}, user.token);
     }
   }, [user, fetchFeedback]);
+
+  // Fetch cart items on component mount
+  useEffect(() => {
+    fetchCartItems().catch(err => {
+      console.warn('Failed to fetch cart items:', err.message);
+    });
+  }, [fetchCartItems]);
 
   // Group feedback by supplier and calculate ratings
   const supplierRatings = React.useMemo(() => {
@@ -100,7 +110,7 @@ const Feedback = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <VendorHeader
-          cart={cart}
+          cart={cartItems}
           showCart={showCart}
           setShowCart={setShowCart}
         />
@@ -119,7 +129,7 @@ const Feedback = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <VendorHeader
-          cart={cart}
+          cart={cartItems}
           showCart={showCart}
           setShowCart={setShowCart}
         />
@@ -144,7 +154,7 @@ const Feedback = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <VendorHeader cart={cart} showCart={showCart} setShowCart={setShowCart} />
+      <VendorHeader cart={cartItems} showCart={showCart} setShowCart={setShowCart} />
 
       <main className="max-w-3xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">

@@ -71,7 +71,9 @@ exports.resizeMultipleImages = async (req, res, next) => {
 
 // === 5. Final Controllers to Send Response ===
 exports.handleSingleUpload = (req, res) => {
-    const fileUrl = `${req.protocol}://${req.get('host')}/public/img/uploads/${req.file.filename}`;
+    // Use environment variable for domain or fallback to host
+    const domain = process.env.DEPLOYED_DOMAIN || req.get('host');
+    const fileUrl = `${req.protocol}://${domain}/public/img/uploads/${req.file.filename}`;
 
     res.status(200).json({
         status: 'success',
@@ -81,8 +83,10 @@ exports.handleSingleUpload = (req, res) => {
 
 
 exports.handleMultipleUpload = (req, res) => {
+    // Use environment variable for domain or fallback to host
+    const domain = process.env.DEPLOYED_DOMAIN || req.get('host');
     const fileUrls = req.body.images.map(filename => {
-        return `${req.protocol}://${req.get('host')}/public/img/uploads/${filename}`;
+        return `${req.protocol}://${domain}/public/img/uploads/${filename}`;
     });
 
     res.status(200).json({

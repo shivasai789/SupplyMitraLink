@@ -125,6 +125,13 @@ export const useAuthStore = create(
               phone: userData.phone || "",
               role: userData.role,
               createdAt: userData.createdAt,
+              onboardingCompleted: userData.onboardingCompleted || false,
+              businessName: userData.businessName || "",
+              businessType: userData.businessType || "",
+              businessAddress: userData.businessAddress || "",
+              city: userData.city || "",
+              state: userData.state || "",
+              pincode: userData.pincode || "",
             };
             
             set({
@@ -174,6 +181,13 @@ export const useAuthStore = create(
                 phone: userData.phone || "",
                 role: userData.role,
                 createdAt: userData.createdAt,
+                onboardingCompleted: userData.onboardingCompleted || false,
+                businessName: userData.businessName || "",
+                businessType: userData.businessType || "",
+                businessAddress: userData.businessAddress || "",
+                city: userData.city || "",
+                state: userData.state || "",
+                pincode: userData.pincode || "",
               };
               
               set({
@@ -229,14 +243,14 @@ export const useAuthStore = create(
         }
       },
 
-      updateUser: (updatedUserData) => {
-        set((state) => ({
-          user: {
-            ...state.user,
-            ...updatedUserData
-          }
-        }));
-      },
+              updateUser: (updatedUserData) => {
+          set((state) => ({
+            user: {
+              ...state.user,
+              ...updatedUserData
+            }
+          }));
+        },
     }),
     {
       name: 'auth-storage',

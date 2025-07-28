@@ -92,9 +92,7 @@ userRouter.get('/supplier/:supplierId/debug', async (req, res) => {
         const User = require('../models/user.model');
         const supplierId = req.params.supplierId;
         
-        console.log('🔍 Debug route - Supplier ID:', supplierId);
-        console.log('🔍 Debug route - Supplier ID type:', typeof supplierId);
-        console.log('🔍 Debug route - Supplier ID length:', supplierId.length);
+
         
         // Test ObjectId conversion
         const mongoose = require('mongoose');
@@ -102,19 +100,16 @@ userRouter.get('/supplier/:supplierId/debug', async (req, res) => {
         let testId;
         try {
             testId = new ObjectId(supplierId);
-            console.log('🔍 Debug route - ObjectId conversion successful:', testId);
         } catch (error) {
-            console.log('❌ Debug route - ObjectId conversion failed:', error.message);
+            // ObjectId conversion failed
         }
         
         // Try to find the supplier
         const supplier = await User.findById(supplierId).select('fullname role');
-        console.log('🔍 Debug route - Found supplier:', supplier);
         
         // Test Material model
         const Material = require('../models/material.model');
         const materials = await Material.find({ supplierId }).limit(5);
-        console.log('🔍 Debug route - Found materials count:', materials.length);
         
         res.json({
             status: 'success',
@@ -134,7 +129,6 @@ userRouter.get('/supplier/:supplierId/debug', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('❌ Debug route error:', error);
         res.status(500).json({
             status: 'error',
             message: error.message
@@ -144,11 +138,9 @@ userRouter.get('/supplier/:supplierId/debug', async (req, res) => {
 
 // Test route to call controller function directly
 userRouter.get('/supplier/:supplierId/test-controller', async (req, res, next) => {
-    console.log('🧪 Test route calling controller function...');
     try {
         await getSupplierProducts(req, res, next);
     } catch (error) {
-        console.error('❌ Error in test route:', error);
         res.status(500).json({
             status: 'error',
             message: error.message

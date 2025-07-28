@@ -31,9 +31,6 @@ exports.getVendorOrders = (req, res, next) => {
 
 // 🔍 Get Supplier Orders
 exports.getSupplierOrders = (req, res, next) => {
-    console.log('🔍 getSupplierOrders called');
-    console.log('👤 User:', req.user.email, 'Role:', req.user.role, 'ID:', req.user.id);
-    
     return getAllByFilter(Order, req => ({
         supplierId: req.user.id
     }), [
@@ -59,7 +56,6 @@ exports.getSupplierOrders = (req, res, next) => {
 // ➕ Create New Order (Vendor)
 exports.createOrder = async (req, res, next) => {
     try {
-        console.log('🔍 Creating order with data:', req.body);
         const { materialId, quantity, supplierId, vendorAddressId, supplierAddressId } = req.body;
 
         // Validate material exists and get price
@@ -91,7 +87,6 @@ exports.createOrder = async (req, res, next) => {
 
         // Set the order data in req.body for the factory controller
         req.body = orderData;
-        console.log('🔍 Final order data:', orderData);
         return createOne(Order)(req, res, next);
     } catch (error) {
         next(error);
@@ -237,9 +232,6 @@ exports.startPreparing = async (req, res, next) => {
 // 📦 Mark Order as Packed (Supplier)
 exports.markAsPacked = async (req, res, next) => {
     try {
-        console.log('🔧 markAsPacked called with orderId:', req.params.id);
-        console.log('👤 User:', req.user.email, 'Role:', req.user.role);
-        
         const { note } = req.body;
         const orderId = req.params.id;
 
@@ -249,20 +241,12 @@ exports.markAsPacked = async (req, res, next) => {
             supplierId: req.user.id
         });
 
-        console.log('📦 Found order:', order ? 'Yes' : 'No', 'Status:', order?.status);
-        console.log('📦 Order details:', JSON.stringify(order, null, 2));
-        
-        // Also populate vendor info to check if it's working
-        const populatedOrder = await Order.findById(orderId).populate('vendorId', 'fullname email phone');
-        console.log('📦 Populated vendor info:', populatedOrder?.vendorId);
-
         if (!order) {
             return next(new APPError('Order not found or access denied', 404));
         }
 
         // If order status is undefined, set it to pending (this is a fallback)
         if (!order.status) {
-            console.log('⚠️ Order status is undefined, setting to pending');
             order.status = 'pending';
             await order.save();
         }
@@ -334,9 +318,6 @@ exports.markAsPacked = async (req, res, next) => {
 // 🚚 Start Transit (Supplier)
 exports.startTransit = async (req, res, next) => {
     try {
-        console.log('🚚 startTransit called with orderId:', req.params.id);
-        console.log('👤 User:', req.user.email, 'Role:', req.user.role);
-        
         const { note } = req.body;
         const orderId = req.params.id;
 
@@ -345,8 +326,6 @@ exports.startTransit = async (req, res, next) => {
             _id: orderId,
             supplierId: req.user.id
         });
-
-        console.log('🚚 Found order:', order ? 'Yes' : 'No', 'Status:', order?.status);
 
         if (!order) {
             return next(new APPError('Order not found or access denied', 404));
@@ -390,9 +369,6 @@ exports.startTransit = async (req, res, next) => {
 // 🛵 Out for Delivery (Supplier)
 exports.outForDelivery = async (req, res, next) => {
     try {
-        console.log('🛵 outForDelivery called with orderId:', req.params.id);
-        console.log('👤 User:', req.user.email, 'Role:', req.user.role);
-        
         const { note } = req.body;
         const orderId = req.params.id;
 
@@ -401,8 +377,6 @@ exports.outForDelivery = async (req, res, next) => {
             _id: orderId,
             supplierId: req.user.id
         });
-
-        console.log('🛵 Found order:', order ? 'Yes' : 'No', 'Status:', order?.status);
 
         if (!order) {
             return next(new APPError('Order not found or access denied', 404));
@@ -446,9 +420,6 @@ exports.outForDelivery = async (req, res, next) => {
 // 🎉 Mark as Delivered (Supplier)
 exports.markAsDelivered = async (req, res, next) => {
     try {
-        console.log('🎉 markAsDelivered called with orderId:', req.params.id);
-        console.log('👤 User:', req.user.email, 'Role:', req.user.role);
-        
         const { note } = req.body;
         const orderId = req.params.id;
 
@@ -457,8 +428,6 @@ exports.markAsDelivered = async (req, res, next) => {
             _id: orderId,
             supplierId: req.user.id
         });
-
-        console.log('🎉 Found order:', order ? 'Yes' : 'No', 'Status:', order?.status);
 
         if (!order) {
             return next(new APPError('Order not found or access denied', 404));

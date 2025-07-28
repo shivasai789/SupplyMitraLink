@@ -138,6 +138,12 @@ const VendorProfile = () => {
     fullname: vendorProfile?.fullname || "",
     email: vendorProfile?.email || "",
     phone: vendorProfile?.phone || "",
+    businessName: vendorProfile?.businessName || "",
+    businessType: vendorProfile?.businessType || "",
+    businessAddress: vendorProfile?.businessAddress || "",
+    city: vendorProfile?.city || "",
+    state: vendorProfile?.state || "",
+    pincode: vendorProfile?.pincode || "",
   });
 
   // Update edit form when profile data loads
@@ -190,18 +196,22 @@ const VendorProfile = () => {
       fullname: vendorProfile?.fullname || "",
       email: vendorProfile?.email || "",
       phone: vendorProfile?.phone || "",
+      businessName: vendorProfile?.businessName || "",
+      businessType: vendorProfile?.businessType || "",
+      businessAddress: vendorProfile?.businessAddress || "",
+      city: vendorProfile?.city || "",
+      state: vendorProfile?.state || "",
+      pincode: vendorProfile?.pincode || "",
     });
     setShowEditProfile(true);
   };
 
   const handleSaveProfile = async () => {
     try {
-      if (user?.token) {
-        await updateProfile(editForm, user.token);
-        updateUser(editForm); // Update user in auth store
-        toast.success("Profile updated successfully!");
-        setShowEditProfile(false);
-      }
+      await updateProfile(editForm);
+      updateUser(editForm); // Update user in auth store
+      toast.success("Profile updated successfully!");
+      setShowEditProfile(false);
     } catch (error) {
       toast.error("Failed to update profile: " + error.message);
     }
@@ -696,36 +706,49 @@ const VendorProfile = () => {
                 </div>
                 <div>
                   <h4 className="text-md font-medium text-gray-900 mb-4">
-                    {t("vendor.accountInfo")}
+                    {t("vendor.businessInfo")}
                   </h4>
                   <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        {t("vendor.userId")}
-                      </label>
-                      <p className="text-sm text-gray-900 mt-1 font-mono">
-                        {vendorProfile?._id || "Not available"}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        {t("vendor.lastUpdated")}
-                      </label>
-                      <p className="text-sm text-gray-900 mt-1">
-                        {vendorProfile?.updatedAt 
-                          ? new Date(vendorProfile.updatedAt).toLocaleDateString()
-                          : "Not available"
-                        }
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        {t("vendor.accountStatus")}
-                      </label>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1">
-                        Active
-                      </span>
-                    </div>
+                    {vendorProfile?.businessName && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Business Name
+                        </label>
+                        <p className="text-sm text-gray-900 mt-1">
+                          {vendorProfile.businessName}
+                        </p>
+                      </div>
+                    )}
+                    {vendorProfile?.businessType && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Business Type
+                        </label>
+                        <p className="text-sm text-gray-900 mt-1 capitalize">
+                          {vendorProfile.businessType}
+                        </p>
+                      </div>
+                    )}
+                    {vendorProfile?.businessAddress && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Business Address
+                        </label>
+                        <p className="text-sm text-gray-900 mt-1">
+                          {vendorProfile.businessAddress}
+                        </p>
+                      </div>
+                    )}
+                    {(vendorProfile?.city || vendorProfile?.state || vendorProfile?.pincode) && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Location
+                        </label>
+                        <p className="text-sm text-gray-900 mt-1">
+                          {[vendorProfile.city, vendorProfile.state, vendorProfile.pincode].filter(Boolean).join(', ')}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -781,6 +804,99 @@ const VendorProfile = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                           placeholder="Enter your phone number"
                         />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Business Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.businessName}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, businessName: e.target.value })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Enter your business name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Business Type
+                        </label>
+                        <select
+                          value={editForm.businessType}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, businessType: e.target.value })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                          <option value="">Select business type</option>
+                          <option value="retail">Retail Store</option>
+                          <option value="wholesale">Wholesale</option>
+                          <option value="restaurant">Restaurant</option>
+                          <option value="catering">Catering</option>
+                          <option value="manufacturing">Manufacturing</option>
+                          <option value="distribution">Distribution</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Business Address
+                        </label>
+                        <textarea
+                          value={editForm.businessAddress}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, businessAddress: e.target.value })
+                          }
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Enter your business address"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            City
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.city}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, city: e.target.value })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="City"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            State
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.state}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, state: e.target.value })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="State"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Pincode
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.pincode}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, pincode: e.target.value })
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="Pincode"
+                          />
+                        </div>
                       </div>
                       <div className="text-xs text-gray-500">
                         * Required fields. Email cannot be changed after registration.

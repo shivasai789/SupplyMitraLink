@@ -24,6 +24,8 @@ import VendorProfile from "./components/vendor/VendorProfile";
 import SupplierPublicView from "./components/vendor/SupplierPublicView";
 import SupplierDetailView from "./components/vendor/SupplierDetailView";
 import PredictionPage from "./pages/PredictionPage";
+import OnboardingForm from "./components/onboarding/OnboardingForm";
+import OnboardingGuard from "./components/common/OnboardingGuard";
 import { useAuthState, useAuthActions } from "./stores/useAuthStore";
 import { Toaster } from "react-hot-toast";
 import Loader from "./components/common/Loader";
@@ -101,13 +103,23 @@ export default function App() {
                 </PublicRoute>
               }
             />
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <OnboardingForm />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* Protected Routes */}
+            {/* Protected Routes with Onboarding Guard */}
             <Route
               path="/dashboard/supplier"
               element={
                 <ProtectedRoute role="supplier">
-                  <SupplierDashboard />
+                  <OnboardingGuard>
+                    <SupplierDashboard />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />
@@ -115,7 +127,9 @@ export default function App() {
               path="/dashboard/vendor"
               element={
                 <ProtectedRoute role="vendor">
-                  <VendorDashboard />
+                  <OnboardingGuard>
+                    <VendorDashboard />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />
@@ -123,7 +137,9 @@ export default function App() {
               path="/supplier/items"
               element={
                 <ProtectedRoute role="supplier">
-                  <SupplierItems />
+                  <OnboardingGuard>
+                    <SupplierItems />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />
@@ -131,7 +147,9 @@ export default function App() {
               path="/alerts/price-warnings"
               element={
                 <ProtectedRoute role="supplier">
-                  <PriceWarnings />
+                  <OnboardingGuard>
+                    <PriceWarnings />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />
@@ -139,7 +157,9 @@ export default function App() {
               path="/feedback"
               element={
                 <ProtectedRoute>
-                  <Feedback />
+                  <OnboardingGuard>
+                    <Feedback />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />
@@ -147,7 +167,9 @@ export default function App() {
               path="/checkout"
               element={
                 <ProtectedRoute>
-                  <Checkout />
+                  <OnboardingGuard>
+                    <Checkout />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />
@@ -155,7 +177,9 @@ export default function App() {
               path="/order-confirmation"
               element={
                 <ProtectedRoute>
-                  <OrderConfirmation />
+                  <OnboardingGuard>
+                    <OrderConfirmation />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />
@@ -163,7 +187,9 @@ export default function App() {
               path="/supplier/profile"
               element={
                 <ProtectedRoute role="supplier">
-                  <SupplierProfile />
+                  <OnboardingGuard>
+                    <SupplierProfile />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />
@@ -171,7 +197,9 @@ export default function App() {
               path="/vendor/profile"
               element={
                 <ProtectedRoute role="vendor">
-                  <VendorProfile />
+                  <OnboardingGuard>
+                    <VendorProfile />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />
@@ -179,7 +207,9 @@ export default function App() {
               path="/supplier/:id"
               element={
                 <ProtectedRoute role="vendor">
-                  <SupplierPublicView />
+                  <OnboardingGuard>
+                    <SupplierPublicView />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />
@@ -187,7 +217,9 @@ export default function App() {
               path="/supplier/:id/detail"
               element={
                 <ProtectedRoute role="vendor">
-                  <SupplierDetailView />
+                  <OnboardingGuard>
+                    <SupplierDetailView />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />
@@ -195,7 +227,9 @@ export default function App() {
               path="/prediction"
               element={
                 <ProtectedRoute>
-                  <PredictionPage />
+                  <OnboardingGuard>
+                    <PredictionPage />
+                  </OnboardingGuard>
                 </ProtectedRoute>
               }
             />

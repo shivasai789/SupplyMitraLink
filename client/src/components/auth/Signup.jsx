@@ -45,15 +45,13 @@ const Signup = () => {
     try {
       const result = await signup({ fullname: name, email, password, role });
       if (result.success) {
-        const successMsg = `Account created successfully! Welcome to SupplyMitra. Redirecting to ${role} dashboard...`;
+        const successMsg = `Account created successfully! Welcome to SupplyMitra. Please complete your profile setup...`;
         setSuccess(successMsg);
         toast.success(successMsg);
         
-        // Redirect immediately since user is now logged in
+        // Redirect to onboarding for new users
         setTimeout(() => {
-          const dashboardPath =
-            role === "supplier" ? "/dashboard/supplier" : "/dashboard/vendor";
-          navigate(dashboardPath);
+          navigate("/onboarding");
         }, 1000);
       } else {
         const errorMsg = result.error || "Failed to create account";

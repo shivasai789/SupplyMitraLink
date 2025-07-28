@@ -34,9 +34,15 @@ const Login = () => {
 
         // Redirect after a short delay to show success message
         setTimeout(() => {
-          const dashboardPath =
-            role === "supplier" ? "/dashboard/supplier" : "/dashboard/vendor";
-          navigate(dashboardPath);
+          // Check if user has completed onboarding
+          if (result.user?.onboardingCompleted === true) {
+            const dashboardPath =
+              role === "supplier" ? "/dashboard/supplier" : "/dashboard/vendor";
+            navigate(dashboardPath);
+          } else {
+            // Redirect to onboarding if not completed
+            navigate("/onboarding");
+          }
         }, 1500);
       } else {
         const errorMsg = result.error || "Failed to login";

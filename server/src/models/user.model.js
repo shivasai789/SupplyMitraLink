@@ -33,6 +33,52 @@ const userSchema = new mongoose.Schema({
         required: true,
     },
 
+    // Onboarding fields
+    businessName: {
+        type: String,
+        trim: true,
+        default: ""
+    },
+
+    businessType: {
+        type: String,
+        trim: true,
+        default: ""
+    },
+
+    businessAddress: {
+        type: String,
+        trim: true,
+        default: ""
+    },
+
+    city: {
+        type: String,
+        trim: true,
+        default: ""
+    },
+
+    state: {
+        type: String,
+        trim: true,
+        default: ""
+    },
+
+    pincode: {
+        type: String,
+        trim: true,
+        default: ""
+    },
+
+    onboardingCompleted: {
+        type: Boolean,
+        default: false
+    },
+
+    onboardingDate: {
+        type: Date
+    },
+
     createdAt: {
         type: Date,
         default: Date.now,

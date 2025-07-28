@@ -174,6 +174,12 @@ const SupplierProfile = () => {
       fullname: supplierProfile?.fullname || "",
       email: supplierProfile?.email || "",
       phone: supplierProfile?.phone || "",
+      businessName: supplierProfile?.businessName || "",
+      businessType: supplierProfile?.businessType || "",
+      businessAddress: supplierProfile?.businessAddress || "",
+      city: supplierProfile?.city || "",
+      state: supplierProfile?.state || "",
+      pincode: supplierProfile?.pincode || "",
     });
     setShowEditProfile(true);
   };
@@ -687,16 +693,46 @@ const SupplierProfile = () => {
                 </div>
                 <div>
                   <h4 className="text-md font-medium text-gray-900 mb-4">
-                    {t("supplierProfile.accountInfo")}
+                    {t("supplierProfile.businessInfo")}
                   </h4>
                   <div className="space-y-3">
-                    {supplierProfile?.role && (
+                    {supplierProfile?.businessName && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700">
-                          {t("supplierProfile.role")}
+                          Business Name
+                        </label>
+                        <p className="text-sm text-gray-900 mt-1">
+                          {supplierProfile.businessName}
+                        </p>
+                      </div>
+                    )}
+                    {supplierProfile?.businessType && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Business Type
                         </label>
                         <p className="text-sm text-gray-900 mt-1 capitalize">
-                          {supplierProfile.role}
+                          {supplierProfile.businessType}
+                        </p>
+                      </div>
+                    )}
+                    {supplierProfile?.businessAddress && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Business Address
+                        </label>
+                        <p className="text-sm text-gray-900 mt-1">
+                          {supplierProfile.businessAddress}
+                        </p>
+                      </div>
+                    )}
+                    {(supplierProfile?.city || supplierProfile?.state || supplierProfile?.pincode) && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Location
+                        </label>
+                        <p className="text-sm text-gray-900 mt-1">
+                          {[supplierProfile.city, supplierProfile.state, supplierProfile.pincode].filter(Boolean).join(', ')}
                         </p>
                       </div>
                     )}
@@ -712,92 +748,185 @@ const SupplierProfile = () => {
                 </button>
               </div>
             </div>
+          </>
+        )}
 
-            {/* Edit Profile Modal */}
-            {showEditProfile && (
-              <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                  <div className="mt-3">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">
-                      {t("supplierProfile.editProfile")}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Fields marked with <span className="text-red-500">*</span> are required.
-                    </p>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {t("supplierProfile.fullname")} <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.fullname}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, fullname: e.target.value })
-                          }
-                          placeholder="Enter your full name"
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {t("supplierProfile.email")} <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="email"
-                          value={editForm.email}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, email: e.target.value })
-                          }
-                          placeholder="Enter your email address"
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {t("supplierProfile.phone")}
-                        </label>
-                        <input
-                          type="tel"
-                          value={editForm.phone}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, phone: e.target.value })
-                          }
-                          placeholder="Enter your phone number"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        />
-                      </div>
+        {/* Edit Profile Modal */}
+        {showEditProfile && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  {t("supplierProfile.editProfile")}
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Fields marked with <span className="text-red-500">*</span> are required.
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t("supplierProfile.fullname")} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.fullname}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, fullname: e.target.value })
+                      }
+                      placeholder="Enter your full name"
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t("supplierProfile.email")} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={editForm.email}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, email: e.target.value })
+                      }
+                      placeholder="Enter your email address"
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t("supplierProfile.phone")}
+                    </label>
+                    <input
+                      type="tel"
+                      value={editForm.phone}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, phone: e.target.value })
+                      }
+                      placeholder="Enter your phone number"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Business Name
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.businessName}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, businessName: e.target.value })
+                      }
+                      placeholder="Enter your business name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Business Type
+                    </label>
+                    <select
+                      value={editForm.businessType}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, businessType: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option value="">Select business type</option>
+                      <option value="retail">Retail Store</option>
+                      <option value="wholesale">Wholesale</option>
+                      <option value="restaurant">Restaurant</option>
+                      <option value="catering">Catering</option>
+                      <option value="manufacturing">Manufacturing</option>
+                      <option value="distribution">Distribution</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Business Address
+                    </label>
+                    <textarea
+                      value={editForm.businessAddress}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, businessAddress: e.target.value })
+                      }
+                      rows={3}
+                      placeholder="Enter your business address"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.city}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, city: e.target.value })
+                        }
+                        placeholder="City"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
                     </div>
-                    <div className="flex space-x-3 mt-6">
-                      <button
-                        onClick={handleSaveProfile}
-                        disabled={isUpdatingProfile}
-                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isUpdatingProfile ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline"></div>
-                            Updating...
-                          </>
-                        ) : (
-                          t("supplierProfile.save")
-                        )}
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        disabled={isUpdatingProfile}
-                        className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {t("supplierProfile.cancel")}
-                      </button>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        State
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.state}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, state: e.target.value })
+                        }
+                        placeholder="State"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Pincode
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.pincode}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, pincode: e.target.value })
+                        }
+                        placeholder="Pincode"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
                     </div>
                   </div>
                 </div>
+                <div className="flex space-x-3 mt-6">
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={isUpdatingProfile}
+                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isUpdatingProfile ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline"></div>
+                        Updating...
+                      </>
+                    ) : (
+                      t("supplierProfile.save")
+                    )}
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={isUpdatingProfile}
+                    className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {t("supplierProfile.cancel")}
+                  </button>
+                </div>
               </div>
-            )}
-          </>
+            </div>
+          </div>
         )}
 
         {/* Orders Tab */}

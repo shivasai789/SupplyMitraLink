@@ -28,18 +28,11 @@ exports.deleteUser = (req, res, next) => {
 
 // 👤 Get User Profile
 exports.getUserProfile = (req, res, next) => {
-    console.log('🔍 getUserProfile called');
-    console.log('👤 User ID:', req.user.id);
-    
     return getOneByFilter(User, req => ({ _id: req.user.id }), null)(req, res, next);
 };
 
 // 📝 Update User Profile
 exports.updateUserProfile = (req, res, next) => {
-    console.log('🔍 updateUserProfile called');
-    console.log('👤 User ID:', req.user.id);
-    console.log('📦 Request body:', req.body);
-    
     return updateOneByFilter(User, req => ({ _id: req.user.id }))(req, res, next);
 };
 
@@ -119,73 +112,48 @@ exports.getSupplierDetails = async (req, res, next) => {
 
 // 📦 Get Supplier Products
 exports.getSupplierProducts = async (req, res, next) => {
-    console.log('🚀 getSupplierProducts function called!');
     try {
-        console.log('🔍 getSupplierProducts called');
-        console.log('👤 User:', req.user.email, 'Role:', req.user.role);
-        console.log('📦 Supplier ID:', req.params.supplierId);
-        console.log('📦 Query params:', req.query);
-        
         const supplierId = req.params.supplierId;
         const { page = 1, limit = 10, category, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
 
-        console.log('🔍 Looking for supplier with ID:', supplierId);
-        console.log('🔍 Supplier ID type:', typeof supplierId);
-        console.log('🔍 Supplier ID length:', supplierId.length);
-        
         // Test if we can find the supplier with a different approach
         try {
             const mongoose = require('mongoose');
             const ObjectId = mongoose.Types.ObjectId;
-            console.log('🔍 Testing ObjectId conversion...');
             const testId = new ObjectId(supplierId);
-            console.log('🔍 ObjectId conversion successful:', testId);
         } catch (error) {
-            console.log('❌ ObjectId conversion failed:', error.message);
+            // ObjectId conversion failed
         }
         
         // Validate supplier exists
         const supplier = await User.findById(supplierId).select('fullname role');
-        console.log('🔍 Found supplier:', supplier);
         
         if (!supplier || supplier.role !== 'supplier') {
-            console.log('❌ Supplier not found or not a supplier role');
             return next(new APPError('Supplier not found', 404));
         }
-        
-        console.log('✅ Supplier validated:', supplier.fullname);
 
         // Build filter
         const filter = { supplierId };
         if (category) {
             filter.category = category;
         }
-        
-        console.log('🔍 Material filter:', filter);
 
         // Build sort
         const sort = {};
         sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
-        
-        console.log('🔍 Sort options:', sort);
 
         // Get materials with pagination
         const skip = (page - 1) * limit;
-        console.log('🔍 Pagination - skip:', skip, 'limit:', limit);
         
         const materials = await Material.find(filter)
             .sort(sort)
             .skip(skip)
             .limit(parseInt(limit));
-            
-        console.log('🔍 Found materials count:', materials.length);
 
         // Get total count
         const total = await Material.countDocuments(filter);
-        console.log('🔍 Total materials count:', total);
 
         // Calculate average ratings for materials
-        console.log('🔍 Calculating ratings for materials...');
         const materialsWithRatings = await Promise.all(
             materials.map(async (material) => {
                 const reviews = await Review.find({ materialId: material._id });
@@ -202,9 +170,6 @@ exports.getSupplierProducts = async (req, res, next) => {
             })
         );
         
-        console.log('🔍 Materials with ratings calculated');
-
-        console.log('🔍 Sending response with materials...');
         res.status(200).json({
             status: 'success',
             data: {
@@ -228,26 +193,15 @@ exports.getSupplierProducts = async (req, res, next) => {
 // 📊 Get Supplier Performance
 exports.getSupplierPerformance = async (req, res, next) => {
     try {
-        console.log('🔍 getSupplierPerformance called');
-        console.log('👤 User:', req.user.email, 'Role:', req.user.role);
-        console.log('📦 Supplier ID:', req.params.supplierId);
-        console.log('📦 Query params:', req.query);
-        
         const supplierId = req.params.supplierId;
         const { period = '1m' } = req.query;
 
-        console.log('🔍 Looking for supplier with ID:', supplierId);
-        
         // Validate supplier exists
         const supplier = await User.findById(supplierId).select('fullname role');
-        console.log('🔍 Found supplier:', supplier);
         
         if (!supplier || supplier.role !== 'supplier') {
-            console.log('❌ Supplier not found or not a supplier role');
             return next(new APPError('Supplier not found', 404));
         }
-        
-        console.log('✅ Supplier validated:', supplier.fullname);
 
         // Get all reviews
         const reviews = await Review.find({ supplierId })

@@ -12,12 +12,8 @@ exports.getAllByFilter = (
 ) =>
     catchAsync(async (req, res, next) => {
         const filter = getFilter(req);
-        console.log('🔍 getAllByFilter - Model:', Model.modelName);
-        console.log('🔍 getAllByFilter - Filter:', filter);
-        console.log('🔍 getAllByFilter - Populate options:', populateOptions);
         
         const totalDocs = await Model.countDocuments(filter);
-        console.log('🔍 getAllByFilter - Total docs:', totalDocs);
 
         let query = Model.find(filter);
         if (populateOptions) query = query.populate(populateOptions); // <-- Add populate here
@@ -29,7 +25,6 @@ exports.getAllByFilter = (
             .paginate();
 
         const docs = await features.query;
-        console.log('🔍 getAllByFilter - Found docs:', docs.length);
 
         return statusOK(res, docs, 'Fetched all filtered records');
     });
@@ -60,7 +55,9 @@ exports.createOne = (Model) => catchAsync(async (req, res, next) => {
 // 📝 Update One Document by ID
 exports.updateOneByFilter = (Model, getFilter = (req) => ({ _id: req.params.id })) =>
     catchAsync(async (req, res, next) => {
-        const doc = await Model.findOneAndUpdate(getFilter(req), req.body, {
+        const filter = getFilter(req);
+        
+        const doc = await Model.findOneAndUpdate(filter, req.body, {
             new: true,
             runValidators: true
         });

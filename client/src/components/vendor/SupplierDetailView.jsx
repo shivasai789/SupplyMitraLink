@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/useAuthStore';
 import { useVendorStore } from '../../stores/useVendorStore';
 import { useCartStore } from '../../stores/useCartStore';
 import VendorHeader from './VendorHeader';
+import ImageCarousel from '../common/ImageCarousel';
 
 const SupplierDetailView = () => {
   const { t } = useTranslation();
@@ -325,8 +326,17 @@ const SupplierDetailView = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {supplierProducts.map((product) => (
-                    <div key={product._id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-start mb-2">
+                    <div key={product._id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                      {/* Product Image Carousel */}
+                      <div className="h-48">
+                        <ImageCarousel 
+                          images={product.images || []} 
+                          alt={product.name}
+                          className="h-full"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium text-gray-900">{product.name}</h4>
                         <div className="flex items-center">
                           {renderStars(Math.round(product.averageRating || 0))}
@@ -352,6 +362,7 @@ const SupplierDetailView = () => {
                       <button className="w-full mt-3 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
                         Add to Cart
                       </button>
+                      </div>
                     </div>
                   ))}
                 </div>

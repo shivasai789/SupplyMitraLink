@@ -11,6 +11,7 @@ import QuantityModal from "../common/QuantityModal";
 import Toast from "../common/Toast";
 import { toast } from "react-hot-toast";
 import Loader from "../common/Loader";
+import ImageCarousel from "../common/ImageCarousel";
 
 // --- SupplierProfilePreview Component ---
 const SupplierProfilePreview = ({ supplier, products, onClose }) => {
@@ -795,7 +796,7 @@ const VendorDashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            {t("common.welcome")}, {profile?.name || user?.name || "Vendor"}! 👋
+            {t("common.welcome")}, {profile?.fullname || user?.fullname || user?.name || "Vendor"}! 👋
           </h2>
           <p className="text-gray-600">
             {t("vendorDashboard.monthlySpendingOverview")}
@@ -1026,6 +1027,14 @@ const VendorDashboard = () => {
                   key={product._id || product.id}
                   className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
                 >
+                  {/* Product Image Carousel */}
+                  <div className="h-48">
+                    <ImageCarousel 
+                      images={product.images || []} 
+                      alt={product.name}
+                      className="h-full"
+                    />
+                  </div>
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-medium text-gray-900">

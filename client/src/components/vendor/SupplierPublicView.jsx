@@ -6,6 +6,7 @@ import { useCartStore } from "../../stores/useCartStore";
 import VendorHeader from "./VendorHeader";
 import QuantityModal from "../common/QuantityModal";
 import Toast from "../common/Toast";
+import ImageCarousel from "../common/ImageCarousel";
 
 const SupplierPublicView = () => {
   const { t } = useTranslation();
@@ -503,9 +504,18 @@ const SupplierPublicView = () => {
                   {paginatedProducts.map((product) => (
                     <div
                       key={product._id || product.id}
-                      className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                      className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
                     >
-                      <div className="flex justify-between items-start mb-3">
+                      {/* Product Image Carousel */}
+                      <div className="h-48">
+                        <ImageCarousel 
+                          images={product.images || []} 
+                          alt={product.name}
+                          className="h-full"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-3">
                         <h4 className="font-semibold text-gray-800">
                           {product.name}
                         </h4>
@@ -545,6 +555,7 @@ const SupplierPublicView = () => {
                           ? "Out of Stock" 
                           : "Add to Cart"}
                       </button>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 const ImageCarousel = ({ images = [], alt = "Product image", className = "" }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-
+  
   // Helper function to construct full image URL
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
@@ -21,6 +21,13 @@ const ImageCarousel = ({ images = [], alt = "Product image", className = "" }) =
   const processedImages = images
     .map(getImageUrl)
     .filter(url => url !== null);
+  
+  // For testing - add a fallback image if all images fail
+  const testImages = processedImages.length > 0 ? processedImages : ['https://via.placeholder.com/400x400/cccccc/666666?text=No+Image'];
+
+  console.log('ImageCarousel received images:', images);
+  console.log('ImageCarousel alt:', alt);
+  console.log('ImageCarousel processed images:', processedImages);
 
   // If no images, return null
   if (!processedImages || processedImages.length === 0) {
@@ -37,7 +44,7 @@ const ImageCarousel = ({ images = [], alt = "Product image", className = "" }) =
   }
 
   // Limit to 5 images maximum
-  const displayImages = processedImages.slice(0, 5);
+  const displayImages = testImages.slice(0, 5);
   const hasMultipleImages = displayImages.length > 1;
 
   const nextImage = () => {
@@ -64,7 +71,9 @@ const ImageCarousel = ({ images = [], alt = "Product image", className = "" }) =
           src={displayImages[currentIndex]}
           alt={`${alt} ${currentIndex + 1}`}
           className="w-full h-full object-contain"
+          onLoad={() => console.log('Image loaded successfully:', displayImages[currentIndex])}
           onError={(e) => {
+            console.log('Image failed to load:', displayImages[currentIndex]);
             e.target.style.display = 'none';
             e.target.nextSibling.style.display = 'flex';
           }}

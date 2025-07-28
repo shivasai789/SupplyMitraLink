@@ -12,7 +12,12 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/supplymitr
 const globalErrorHandler = require('./controllers/error.controller');
 const routes = require('./routers');
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173', 'https://supplymitralink.onrender.com'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use('/public', express.static(path.join(__dirname, '..', 'public')));
 

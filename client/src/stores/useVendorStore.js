@@ -48,6 +48,10 @@ export const useVendorStore = create(
           const response = await vendorAPI.getAllMaterials();
           // Extract the data array from the API response
           const materialsData = response?.data || response || [];
+          console.log('Materials API response:', response);
+          console.log('Materials data:', materialsData);
+          console.log('First material details:', materialsData[0]);
+          console.log('All materials images:', materialsData.map(m => ({ id: m._id, name: m.name, images: m.images, imagesLength: m.images?.length })));
           set({ materials: materialsData, loading: false });
           return response;
         } catch (error) {

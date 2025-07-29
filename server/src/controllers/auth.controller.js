@@ -34,14 +34,27 @@ exports.signup = catchAsync(async (req, res, next) => {
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
 
+    const responseData = {
+        id: user._id,
+        email: user.email,
+        fullname: user.fullname,
+        phone: user.phone,
+        role: user.role,
+        createdAt: user.createdAt,
+        onboardingCompleted: user.onboardingCompleted,
+        businessName: user.businessName,
+        businessType: user.businessType,
+        businessAddress: user.businessAddress,
+        city: user.city,
+        state: user.state,
+        pincode: user.pincode,
+        onboardingDate: user.onboardingDate,
+        token,
+    };
+    
     return statusOK(
         res,
-        {
-            id: user._id,
-            email: user.email,
-            role: user.role,
-            token,
-        },
+        responseData,
         'User created successfully'
     );
 
@@ -77,17 +90,27 @@ exports.login = catchAsync(async (req, res, next) => {
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
     
+    const responseData = {
+        id: user._id,
+        email: user.email,
+        fullname: user.fullname,
+        phone: user.phone,
+        role: user.role,
+        createdAt: user.createdAt,
+        onboardingCompleted: user.onboardingCompleted,
+        businessName: user.businessName,
+        businessType: user.businessType,
+        businessAddress: user.businessAddress,
+        city: user.city,
+        state: user.state,
+        pincode: user.pincode,
+        onboardingDate: user.onboardingDate,
+        token,
+    };
+    
     return statusOK(
         res,
-        {
-            id: user._id,
-            email: user.email,
-            fullname: user.fullname,
-            phone: user.phone,
-            role: user.role,
-            createdAt: user.createdAt,
-            token,
-        },
+        responseData,
         'User logged in successfully'
     );
 });

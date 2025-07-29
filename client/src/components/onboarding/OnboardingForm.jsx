@@ -90,8 +90,6 @@ const OnboardingForm = () => {
     }
   };
 
-
-
   const nextStep = () => {
     if (validateStep(currentStep)) {
       setCurrentStep(prev => prev + 1);
@@ -103,16 +101,10 @@ const OnboardingForm = () => {
   };
 
   const handleSubmit = async () => {
-    console.log('🔍 OnboardingForm Debug - handleSubmit called');
-    console.log('🔍 OnboardingForm Debug - Current step:', currentStep);
-    console.log('🔍 OnboardingForm Debug - User role:', user?.role);
-    
     if (!validateStep(currentStep)) {
-      console.log('🔍 OnboardingForm Debug - Validation failed');
       return;
     }
 
-    console.log('🔍 OnboardingForm Debug - Validation passed, starting submission');
     setLoading(true);
     
     try {
@@ -122,217 +114,270 @@ const OnboardingForm = () => {
         onboardingDate: new Date().toISOString()
       };
 
-      console.log('🔍 OnboardingForm Debug - Sending profileData to API:', profileData);
-
       // Update profile based on user role
       let response;
       if (user?.role === 'supplier') {
-        console.log('🔍 OnboardingForm Debug - Calling updateSupplierProfile');
         response = await updateSupplierProfile(profileData);
-        console.log('🔍 OnboardingForm Debug - Supplier profile updated successfully');
         toast.success('Profile updated successfully! Welcome to SupplyMitraLink!');
-        navigate('/dashboard/supplier');
       } else if (user?.role === 'vendor') {
-        console.log('🔍 OnboardingForm Debug - Calling updateVendorProfile');
         response = await updateVendorProfile(profileData);
-        console.log('🔍 OnboardingForm Debug - Vendor profile updated successfully');
         toast.success('Profile updated successfully! Welcome to SupplyMitraLink!');
-        navigate('/dashboard/vendor');
       } else {
-        console.log('🔍 OnboardingForm Debug - Unknown user role:', user?.role);
         throw new Error('Unknown user role');
       }
 
       // Update user in auth store with the response data from backend
-      console.log('🔍 OnboardingForm Debug - Response:', response);
-      console.log('🔍 OnboardingForm Debug - ProfileData:', profileData);
-      
       if (response?.data) {
-        console.log('🔍 OnboardingForm Debug - Using response data');
         updateUser(response.data);
       } else {
         // Fallback to form data if no response data
-        console.log('🔍 OnboardingForm Debug - Using form data as fallback');
         updateUser(profileData);
       }
       
-      console.log('🔍 OnboardingForm Debug - User updated in store');
+      // Add a small delay to ensure the store is updated before navigation
+      setTimeout(() => {
+        if (user?.role === 'supplier') {
+          navigate('/dashboard/supplier');
+        } else if (user?.role === 'vendor') {
+          navigate('/dashboard/vendor');
+        }
+      }, 100);
     } catch (error) {
-      console.error('🔍 OnboardingForm Debug - Error occurred:', error);
-      console.error('🔍 OnboardingForm Debug - Error stack:', error.stack);
       toast.error('Failed to update profile: ' + error.message);
     } finally {
-      console.log('🔍 OnboardingForm Debug - Setting loading to false');
       setLoading(false);
     }
   };
 
   const renderStep1 = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+          <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">Personal Information</h3>
+        <p className="text-gray-600">Let's start with your basic details</p>
+      </div>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Full Name *
-        </label>
-        <input
-          type="text"
-          value={formData.fullname}
-          onChange={(e) => handleInputChange('fullname', e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.fullname ? 'border-red-500' : 'border-gray-300'
-          }`}
-          placeholder="Enter your full name"
-        />
-        {errors.fullname && <p className="text-red-500 text-sm mt-1">{errors.fullname}</p>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Full Name *
+          </label>
+          <input
+            type="text"
+            value={formData.fullname}
+            onChange={(e) => handleInputChange('fullname', e.target.value)}
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+              errors.fullname ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+            }`}
+            placeholder="Enter your full name"
+          />
+          {errors.fullname && <p className="text-red-500 text-sm mt-2 flex items-center">
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {errors.fullname}
+          </p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Email Address *
+          </label>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleInputChange('email', e.target.value)}
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+              errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+            }`}
+            placeholder="Enter your email address"
+          />
+          {errors.email && <p className="text-red-500 text-sm mt-2 flex items-center">
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {errors.email}
+          </p>}
+        </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Email Address *
-        </label>
-        <input
-          type="email"
-          value={formData.email}
-          onChange={(e) => handleInputChange('email', e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.email ? 'border-red-500' : 'border-gray-300'
-          }`}
-          placeholder="Enter your email address"
-        />
-        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
           Phone Number *
         </label>
         <input
           type="tel"
           value={formData.phone}
           onChange={(e) => handleInputChange('phone', e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.phone ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+            errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
           }`}
           placeholder="Enter your phone number"
         />
-        {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+        {errors.phone && <p className="text-red-500 text-sm mt-2 flex items-center">
+          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          {errors.phone}
+        </p>}
       </div>
     </div>
   );
 
   const renderStep2 = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Business Information</h3>
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">Business Information</h3>
+        <p className="text-gray-600">Tell us about your business</p>
+      </div>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Business Name *
-        </label>
-        <input
-          type="text"
-          value={formData.businessName}
-          onChange={(e) => handleInputChange('businessName', e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.businessName ? 'border-red-500' : 'border-gray-300'
-          }`}
-          placeholder="Enter your business name"
-        />
-        {errors.businessName && <p className="text-red-500 text-sm mt-1">{errors.businessName}</p>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Business Name *
+          </label>
+          <input
+            type="text"
+            value={formData.businessName}
+            onChange={(e) => handleInputChange('businessName', e.target.value)}
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+              errors.businessName ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+            }`}
+            placeholder="Enter your business name"
+          />
+          {errors.businessName && <p className="text-red-500 text-sm mt-2 flex items-center">
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {errors.businessName}
+          </p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Business Type *
+          </label>
+          <select
+            value={formData.businessType}
+            onChange={(e) => handleInputChange('businessType', e.target.value)}
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+              errors.businessType ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            <option value="">Select business type</option>
+            <option value="retail">Retail Store</option>
+            <option value="wholesale">Wholesale</option>
+            <option value="restaurant">Restaurant</option>
+            <option value="catering">Catering</option>
+            <option value="manufacturing">Manufacturing</option>
+            <option value="distribution">Distribution</option>
+            <option value="other">Other</option>
+          </select>
+          {errors.businessType && <p className="text-red-500 text-sm mt-2 flex items-center">
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {errors.businessType}
+          </p>}
+        </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Business Type *
-        </label>
-        <select
-          value={formData.businessType}
-          onChange={(e) => handleInputChange('businessType', e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.businessType ? 'border-red-500' : 'border-gray-300'
-          }`}
-        >
-          <option value="">Select business type</option>
-          <option value="retail">Retail Store</option>
-          <option value="wholesale">Wholesale</option>
-          <option value="restaurant">Restaurant</option>
-          <option value="catering">Catering</option>
-          <option value="manufacturing">Manufacturing</option>
-          <option value="distribution">Distribution</option>
-          <option value="other">Other</option>
-        </select>
-        {errors.businessType && <p className="text-red-500 text-sm mt-1">{errors.businessType}</p>}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
           Business Address *
         </label>
         <textarea
           value={formData.businessAddress}
           onChange={(e) => handleInputChange('businessAddress', e.target.value)}
           rows={3}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.businessAddress ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+            errors.businessAddress ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
           }`}
           placeholder="Enter your complete business address"
         />
-        {errors.businessAddress && <p className="text-red-500 text-sm mt-1">{errors.businessAddress}</p>}
+        {errors.businessAddress && <p className="text-red-500 text-sm mt-2 flex items-center">
+          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          {errors.businessAddress}
+        </p>}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             City *
           </label>
           <input
             type="text"
             value={formData.city}
             onChange={(e) => handleInputChange('city', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.city ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+              errors.city ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
             }`}
             placeholder="City"
           />
-          {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
+          {errors.city && <p className="text-red-500 text-sm mt-2 flex items-center">
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {errors.city}
+          </p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             State *
           </label>
           <input
             type="text"
             value={formData.state}
             onChange={(e) => handleInputChange('state', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.state ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+              errors.state ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
             }`}
             placeholder="State"
           />
-          {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
+          {errors.state && <p className="text-red-500 text-sm mt-2 flex items-center">
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {errors.state}
+          </p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
             Pincode *
           </label>
           <input
             type="text"
             value={formData.pincode}
             onChange={(e) => handleInputChange('pincode', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.pincode ? 'border-red-500' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+              errors.pincode ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
             }`}
             placeholder="Pincode"
           />
-          {errors.pincode && <p className="text-red-500 text-sm mt-1">{errors.pincode}</p>}
+          {errors.pincode && <p className="text-red-500 text-sm mt-2 flex items-center">
+            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {errors.pincode}
+          </p>}
         </div>
       </div>
     </div>
   );
-
-
 
   const renderCurrentStep = () => {
     switch (currentStep) {
@@ -343,89 +388,120 @@ const OnboardingForm = () => {
   };
 
   const steps = [
-    { number: 1, title: 'Personal Info' },
-    { number: 2, title: 'Business Info' }
+    { number: 1, title: 'Personal Info', icon: '👤', color: 'blue' },
+    { number: 2, title: 'Business Info', icon: '🏢', color: 'green' }
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
         <Loader text="Setting up your profile..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full mb-6">
+            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Welcome to SupplyMitraLink!
           </h1>
-          <p className="text-gray-600">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Complete your profile to get started with {user?.role === 'supplier' ? 'supplying' : 'purchasing'} on our platform
           </p>
         </div>
 
         {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
+        <div className="mb-12">
+          <div className="flex items-center justify-center space-x-8">
             {steps.map((step, index) => (
               <div key={step.number} className="flex items-center">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                <div className={`flex items-center justify-center w-12 h-12 rounded-full text-white font-semibold transition-all duration-300 ${
                   currentStep >= step.number
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-600'
+                    ? `bg-gradient-to-r from-${step.color}-500 to-${step.color}-600 shadow-lg`
+                    : 'bg-gray-300 text-gray-500'
                 }`}>
-                  {step.number}
+                  <span className="text-lg">{step.icon}</span>
+                </div>
+                <div className="ml-4">
+                  <p className={`font-semibold ${
+                    currentStep >= step.number ? 'text-gray-900' : 'text-gray-500'
+                  }`}>
+                    {step.title}
+                  </p>
+                  <p className={`text-sm ${
+                    currentStep >= step.number ? 'text-gray-600' : 'text-gray-400'
+                  }`}>
+                    Step {step.number}
+                  </p>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className={`w-16 h-1 mx-2 ${
-                    currentStep > step.number ? 'bg-blue-600' : 'bg-gray-200'
+                  <div className={`w-16 h-1 mx-6 rounded-full transition-all duration-300 ${
+                    currentStep > step.number ? 'bg-gradient-to-r from-green-500 to-blue-500' : 'bg-gray-200'
                   }`} />
                 )}
               </div>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-500">
-            {steps.map(step => (
-              <span key={step.number} className="text-center">
-                {step.title}
-              </span>
-            ))}
-          </div>
         </div>
 
         {/* Form */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           {renderCurrentStep()}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8">
+          <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-200">
             <button
               onClick={prevStep}
               disabled={currentStep === 1}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
               Previous
             </button>
 
-            <div className="flex space-x-3">
+            <div className="flex space-x-4">
               {currentStep < 2 ? (
                 <button
                   onClick={nextStep}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   Next
+                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               ) : (
                 <button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                  className="flex items-center px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
-                  {loading ? 'Setting up...' : 'Complete Setup'}
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Setting up...
+                    </>
+                  ) : (
+                    <>
+                      Complete Setup
+                      <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </>
+                  )}
                 </button>
               )}
             </div>

@@ -33,7 +33,7 @@ export const useVendorStore = create(
         try {
           const response = await vendorAPI.updateProfile(updates);
           set({ profile: response.data, loading: false });
-          return response.data;
+          return response; // Return the full response object
         } catch (error) {
           set({ error: error.message, loading: false });
           throw error;

@@ -183,9 +183,7 @@ exports.getSupplierProducts = async (req, res, next) => {
                 }
             }
         });
-        console.log('✅ Response sent successfully');
     } catch (error) {
-        console.error('❌ Error in getSupplierProducts:', error);
         next(error);
     }
 };

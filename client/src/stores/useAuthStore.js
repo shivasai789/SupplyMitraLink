@@ -93,8 +93,26 @@ export const useAuthStore = create(
           try {
             const userData = await get().getCurrentUser();
             if (userData) {
+              // Ensure all user fields are properly set with defaults
+              const completeUserData = {
+                id: userData.id || userData._id,
+                email: userData.email || "",
+                fullname: userData.fullname || "",
+                phone: userData.phone || "",
+                role: userData.role,
+                createdAt: userData.createdAt,
+                onboardingCompleted: userData.onboardingCompleted || false,
+                businessName: userData.businessName || "",
+                businessType: userData.businessType || "",
+                businessAddress: userData.businessAddress || "",
+                city: userData.city || "",
+                state: userData.state || "",
+                pincode: userData.pincode || "",
+                onboardingDate: userData.onboardingDate || null,
+              };
+              
               set({ 
-                user: userData,
+                user: completeUserData,
                 isAuthenticated: true, 
                 loading: false, 
                 initialized: true 
@@ -119,7 +137,7 @@ export const useAuthStore = create(
             const token = response.data.token;
             
             const completeUserData = {
-              id: userData.id,
+              id: userData.id || userData._id,
               email: userData.email,
               fullname: userData.fullname || "",
               phone: userData.phone || "",
@@ -132,6 +150,7 @@ export const useAuthStore = create(
               city: userData.city || "",
               state: userData.state || "",
               pincode: userData.pincode || "",
+              onboardingDate: userData.onboardingDate || null,
             };
             
             set({
@@ -175,7 +194,7 @@ export const useAuthStore = create(
               const token = loginResponse.data.token;
               
               const completeUserData = {
-                id: userData.id,
+                id: userData.id || userData._id,
                 email: userData.email,
                 fullname: userData.fullname || "",
                 phone: userData.phone || "",
@@ -188,6 +207,7 @@ export const useAuthStore = create(
                 city: userData.city || "",
                 state: userData.state || "",
                 pincode: userData.pincode || "",
+                onboardingDate: userData.onboardingDate || null,
               };
               
               set({
@@ -244,12 +264,28 @@ export const useAuthStore = create(
       },
 
               updateUser: (updatedUserData) => {
-          set((state) => ({
-            user: {
+          set((state) => {
+            const updatedUser = {
               ...state.user,
-              ...updatedUserData
-            }
-          }));
+              ...updatedUserData,
+              // Ensure all fields are properly set with defaults
+              id: updatedUserData.id || updatedUserData._id || state.user?.id,
+              email: updatedUserData.email || state.user?.email || "",
+              fullname: updatedUserData.fullname || state.user?.fullname || "",
+              phone: updatedUserData.phone || state.user?.phone || "",
+              role: updatedUserData.role || state.user?.role,
+              createdAt: updatedUserData.createdAt || state.user?.createdAt,
+              onboardingCompleted: updatedUserData.onboardingCompleted !== undefined ? updatedUserData.onboardingCompleted : (state.user?.onboardingCompleted || false),
+              businessName: updatedUserData.businessName || state.user?.businessName || "",
+              businessType: updatedUserData.businessType || state.user?.businessType || "",
+              businessAddress: updatedUserData.businessAddress || state.user?.businessAddress || "",
+              city: updatedUserData.city || state.user?.city || "",
+              state: updatedUserData.state || state.user?.state || "",
+              pincode: updatedUserData.pincode || state.user?.pincode || "",
+              onboardingDate: updatedUserData.onboardingDate || state.user?.onboardingDate || null,
+            };
+            return { user: updatedUser };
+          });
         },
     }),
     {

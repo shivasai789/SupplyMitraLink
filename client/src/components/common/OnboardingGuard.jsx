@@ -32,7 +32,30 @@ const OnboardingGuard = ({ children }) => {
       }
 
       // Check if user has completed onboarding
-      const hasCompletedOnboarding = user.onboardingCompleted === true;
+      // First check the explicit onboardingCompleted flag
+      const hasExplicitOnboardingFlag = user.onboardingCompleted === true;
+      
+      // Also check if all required business fields are filled
+      const hasRequiredBusinessFields = user.businessName && 
+        user.businessName.trim() !== '' &&
+        user.businessType && 
+        user.businessType.trim() !== '' &&
+        user.businessAddress && 
+        user.businessAddress.trim() !== '' &&
+        user.city && 
+        user.city.trim() !== '' &&
+        user.state && 
+        user.state.trim() !== '' &&
+        user.pincode && 
+        user.pincode.trim() !== '';
+
+      // Check if personal fields are filled
+      const hasRequiredPersonalFields = user.fullname && 
+        user.fullname.trim() !== '' &&
+        user.phone && 
+        user.phone.trim() !== '';
+
+      const hasCompletedOnboarding = hasExplicitOnboardingFlag || (hasRequiredBusinessFields && hasRequiredPersonalFields);
 
       if (!hasCompletedOnboarding) {
         // Redirect to onboarding if not completed

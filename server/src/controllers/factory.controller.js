@@ -36,10 +36,13 @@ exports.getOneByFilter = (
     populateOptions = null
 ) =>
     catchAsync(async (req, res, next) => {
-        let query = Model.findOne(getFilter(req));
+        const filter = getFilter(req);
+        
+        let query = Model.findOne(filter);
         if (populateOptions) query = query.populate(populateOptions); // <-- Add populate here
 
         const doc = await query;
+        
         if (!doc) return statusNotFound(res, 'No document found with that ID');
 
         return statusOK(res, doc, 'Fetched document');

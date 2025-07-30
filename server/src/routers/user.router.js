@@ -24,6 +24,40 @@ userRouter.put('/profile', updateUserProfile);
 // Get all suppliers (for vendors to browse)
 userRouter.get('/suppliers', getAllSuppliers);
 
+// Debug: Get all suppliers regardless of onboarding status
+userRouter.get('/suppliers/debug', async (req, res, next) => {
+    try {
+        const suppliers = await require('../models/user.model').find({ 
+            role: 'supplier'
+        }).select('fullname businessName businessType businessAddress city state pincode latitude longitude phone rating createdAt onboardingCompleted');
+
+        // Transform the data to include location information
+        const suppliersWithLocation = suppliers.map(supplier => ({
+            _id: supplier._id,
+            fullname: supplier.fullname,
+            businessName: supplier.businessName,
+            businessType: supplier.businessType,
+            businessAddress: supplier.businessAddress,
+            city: supplier.city,
+            state: supplier.state,
+            pincode: supplier.pincode,
+            latitude: supplier.latitude,
+            longitude: supplier.longitude,
+            phone: supplier.phone,
+            rating: supplier.rating || 0,
+            memberSince: supplier.createdAt,
+            onboardingCompleted: supplier.onboardingCompleted
+        }));
+
+        res.status(200).json({
+            status: 'success',
+            data: suppliersWithLocation
+        });
+    } catch (error) {
+        next(new require('../utils/appError')(error.message, 500));
+    }
+});
+
 // Admin routes (commented out - not used in current app)
 // userRouter.get('/', restrictTo('admin'), getAllUsers);
 // userRouter.get('/admin/:id', restrictTo('admin'), getUser);
@@ -63,10 +97,38 @@ userRouter.get('/debug/supplier/:supplierId', async (req, res) => {
                     _id: supplier._id,
                     fullname: supplier.fullname,
                     email: supplier.email,
-                    role: supplier.role
+                    role: supplier.role,
+                    onboardingCompleted: supplier.onboardingCompleted
                 } : null,
                 exists: !!supplier,
                 isSupplier: supplier && supplier.role === 'supplier'
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+});
+
+// Debug route to check all suppliers and their onboarding status
+userRouter.get('/debug/suppliers', async (req, res) => {
+    try {
+        const User = require('../models/user.model');
+        const allSuppliers = await User.find({ role: 'supplier' }).select('fullname email role onboardingCompleted businessName createdAt');
+        const completedSuppliers = await User.find({ 
+            role: 'supplier',
+            onboardingCompleted: true 
+        }).select('fullname email role onboardingCompleted businessName createdAt');
+        
+        res.json({
+            status: 'success',
+            data: {
+                totalSuppliers: allSuppliers.length,
+                completedSuppliers: completedSuppliers.length,
+                allSuppliers: allSuppliers,
+                completedSuppliersList: completedSuppliers
             }
         });
     } catch (error) {

@@ -31,7 +31,16 @@ L.Icon.Default.mergeOptions({
 });
 
 const VendorProfile = () => {
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
+  
+  // Safety function to ensure translation is available
+  const safeT = (key, fallback) => {
+    try {
+      return ready && t ? t(key) : fallback;
+    } catch (error) {
+      return fallback;
+    }
+  };
   const { user, updateUser, logout } = useAuthStore();
   const [activeTab, setActiveTab] = useState("profile");
   
@@ -48,6 +57,11 @@ const VendorProfile = () => {
   // Loading and initialization states
   const [isInitializing, setIsInitializing] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Don't render until translations are ready
+  if (!ready) {
+    return <Loader message="Loading..." />;
+  }
 
   // Use vendor store for vendor-specific data
   const {
@@ -547,10 +561,10 @@ const VendorProfile = () => {
                 {isInitializing ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline"></div>
-                    {t("common.refreshing")}
+                    {safeT("common.refreshing", "Refreshing...")}
                   </>
                 ) : (
-                  t("common.refreshData")
+                  safeT("common.refreshData", "Refresh Data")
                 )}
               </button>
             </div>

@@ -11,7 +11,16 @@ import Loader from "../common/Loader";
 
 const SupplierDashboard = () => {
   const { user, token, logout } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
+  
+  // Safety function to ensure translation is available
+  const safeT = (key, fallback) => {
+    try {
+      return ready && t ? t(key) : fallback;
+    } catch (error) {
+      return fallback;
+    }
+  };
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -90,6 +99,11 @@ const SupplierDashboard = () => {
 
   // Error state
   const hasError = supplierError || ordersError;
+
+  // Don't render until translations are ready
+  if (!ready) {
+    return <Loader message="Loading..." />;
+  }
 
   // Stats data with real data from store
   const dashboardStatsData = [

@@ -334,7 +334,16 @@ const FloatingCheckout = ({ cart, onCheckout, onRemoveItem }) => {
 
 const VendorDashboard = () => {
   const { user, logout } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
+  
+  // Safety function to ensure translation is available
+  const safeT = (key, fallback) => {
+    try {
+      return ready && t ? t(key) : fallback;
+    } catch (error) {
+      return fallback;
+    }
+  };
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -347,6 +356,11 @@ const VendorDashboard = () => {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [hasInitialized, setHasInitialized] = useState(false);
   const navigate = useNavigate();
+
+  // Don't render until translations are ready
+  if (!ready) {
+    return <Loader message="Loading..." />;
+  }
 
   // Ensure component state is properly initialized on mount
   useEffect(() => {

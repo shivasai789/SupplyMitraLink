@@ -26,6 +26,8 @@ import SupplierDetailView from "./components/vendor/SupplierDetailView";
 import PredictionPage from "./pages/PredictionPage";
 import OnboardingForm from "./components/onboarding/OnboardingForm";
 import OnboardingGuard from "./components/common/OnboardingGuard";
+import VendorMap from "./components/vendor/VendorMap";
+import SupplierMap from "./components/supplier/SupplierMap";
 import { useAuthState, useAuthActions } from "./stores/useAuthStore";
 import { Toaster } from "react-hot-toast";
 import Loader from "./components/common/Loader";
@@ -42,7 +44,7 @@ const AuthInitializer = ({ children }) => {
       hasInitialized.current = true;
       initializeAuth();
     }
-  }, [initialized, initializeAuth]);
+  }, [initialized]); // Remove initializeAuth from dependencies
 
   // Show loading while initializing auth
   if (!initialized) {
@@ -128,7 +130,7 @@ export default function App() {
               element={
                 <ProtectedRoute role="vendor">
                   <OnboardingGuard>
-                    <VendorDashboard />
+                    <VendorDashboard key="vendor-dashboard" />
                   </OnboardingGuard>
                 </ProtectedRoute>
               }
@@ -198,7 +200,7 @@ export default function App() {
               element={
                 <ProtectedRoute role="vendor">
                   <OnboardingGuard>
-                    <VendorProfile />
+                    <VendorProfile key="vendor-profile" />
                   </OnboardingGuard>
                 </ProtectedRoute>
               }
@@ -229,6 +231,26 @@ export default function App() {
                 <ProtectedRoute>
                   <OnboardingGuard>
                     <PredictionPage />
+                  </OnboardingGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vendor/map"
+              element={
+                <ProtectedRoute role="vendor">
+                  <OnboardingGuard>
+                    <VendorMap />
+                  </OnboardingGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/supplier/map"
+              element={
+                <ProtectedRoute role="supplier">
+                  <OnboardingGuard>
+                    <SupplierMap />
                   </OnboardingGuard>
                 </ProtectedRoute>
               }

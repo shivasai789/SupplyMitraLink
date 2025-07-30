@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import VendorHeader from "./VendorHeader";
@@ -15,6 +15,7 @@ import { useVendorStore } from "../../stores/useVendorStore";
 import { useOrderStore } from "../../stores/useOrderStore";
 import { useCartStore } from "../../stores/useCartStore";
 import ApiService from "../../services/api";
+import { vendorAPI } from "../../services/api";
 import { toast } from "react-hot-toast";
 import Loader from "../common/Loader";
 
@@ -31,7 +32,7 @@ L.Icon.Default.mergeOptions({
 
 const VendorProfile = () => {
   const { t } = useTranslation();
-  const { user, updateUser } = useAuthStore();
+  const { user, updateUser, logout } = useAuthStore();
   const [activeTab, setActiveTab] = useState("profile");
   
   // Cart state management
@@ -43,6 +44,10 @@ const VendorProfile = () => {
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [reviews, setReviews] = useState([]); // {orderId, supplier, rating, comment}
   const [allReviews, setAllReviews] = useState([]); // All reviews from API
+
+  // Loading and initialization states
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Use vendor store for vendor-specific data
   const {
@@ -69,16 +74,25 @@ const VendorProfile = () => {
   // Use real orders from API, with fallback to empty array
   const realOrders = orders || [];
 
-  // Fetch complete profile data if needed
-  const fetchCompleteProfile = async () => {
-    if (user?.token) {
-      try {
-        await fetchProfile(user.token);
-      } catch (error) {
-        // Handle error silently or with toast if needed
-      }
-    }
-  };
+  // Memoize the fetch functions to prevent unnecessary re-renders
+  const memoizedFetchProfile = useCallback(fetchProfile, [fetchProfile]);
+  const memoizedFetchVendorOrders = useCallback(fetchVendorOrders, [fetchVendorOrders]);
+  const memoizedFetchCartItems = useCallback(fetchCartItems, [fetchCartItems]);
+
+  // Ensure component state is properly initialized on mount
+  useEffect(() => {
+    // Reset component state to default values
+    setActiveTab("profile");
+    setShowEditProfile(false);
+    setShowTrackOrder(null);
+    setShowReviewForm(null);
+    setReviews([]);
+    setAllReviews([]);
+    setReviewForm({ rating: 5, comment: "" });
+    setHasInitialized(false);
+  }, []); // Empty dependency array - runs only on mount
+
+
 
   // Fetch reviews for a specific material
   const fetchMaterialReviews = async (materialId) => {
@@ -93,40 +107,93 @@ const VendorProfile = () => {
     return [];
   };
 
-  // Fetch complete profile data and orders on component mount
+  // Fetch data on component mount - only once
   useEffect(() => {
-    if (user?.token) {
-      fetchCompleteProfile();
-      fetchVendorOrders();
+    const { token } = useAuthStore.getState();
+    if (!token || hasInitialized) {
+      return;
     }
-  }, [user?.token, fetchProfile, fetchVendorOrders]);
 
-  // Fetch cart items on component mount
-  useEffect(() => {
-    fetchCartItems().catch(err => {
-      console.warn('Failed to fetch cart items:', err.message);
-    });
-  }, [fetchCartItems]);
+    // Fetch initial data
+    const fetchInitialData = async () => {
+      setIsInitializing(true);
+      
+      try {
+        // Fetch profile and orders in parallel
+        const [profileResult, ordersResult] = await Promise.allSettled([
+          memoizedFetchProfile(),
+          memoizedFetchVendorOrders()
+        ]);
+
+        // Fetch cart in background (non-blocking)
+        Promise.allSettled([
+          memoizedFetchCartItems()
+        ]);
+        
+      } catch (error) {
+        console.error('❌ VendorProfile: Initialization error:', error);
+        // Don't logout for general errors, only auth errors
+        if (error.message && (
+          error.message.includes('not authorized') || 
+          error.message.includes('unauthorized') ||
+          error.message.includes('401') ||
+          error.message.includes('403') ||
+          error.message.includes('token')
+        )) {
+          logout();
+        }
+              } finally {
+          setIsInitializing(false);
+          setHasInitialized(true);
+        }
+    };
+
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ VendorProfile: Initialization timeout reached');
+      setIsInitializing(false);
+      setHasInitialized(true);
+    }, 5000); // 5 second timeout
+
+    fetchInitialData();
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [memoizedFetchProfile, memoizedFetchVendorOrders, memoizedFetchCartItems, hasInitialized, logout]);
 
   // Load reviews when reviews tab is accessed
   useEffect(() => {
-    if (activeTab === "reviews" && user?.token && realOrders.length > 0) {
+    if (activeTab === "reviews" && user?.token) {
       const loadReviews = async () => {
-        const deliveredOrders = realOrders.filter(order => order.status === "delivered");
-        const allReviews = [];
-        
-        for (const order of deliveredOrders) {
-          if (order.materialId?._id) {
-            const materialReviews = await fetchMaterialReviews(order.materialId._id);
-            // Filter reviews created by current user
-            const userReviews = materialReviews.filter(review => 
-              review.userId === user.id || review.userId?._id === user.id
-            );
-            allReviews.push(...userReviews);
+        try {
+          const response = await vendorAPI.getUserReviews();
+          setAllReviews(response.data || []);
+        } catch (error) {
+          console.error('❌ Failed to load user reviews:', error);
+          // Fallback to old method if API fails
+          if (realOrders.length > 0) {
+            const deliveredOrders = realOrders.filter(order => order.status === "delivered");
+            const allReviews = [];
+            
+            for (const order of deliveredOrders) {
+              if (order.materialId?._id) {
+                try {
+                  const materialReviews = await fetchMaterialReviews(order.materialId._id);
+                  // Filter reviews created by current user
+                  const userReviews = materialReviews.filter(review => 
+                    review.userId === user.id || review.userId?._id === user.id
+                  );
+                  allReviews.push(...userReviews);
+                } catch (error) {
+                  console.error('❌ Failed to fetch material reviews:', error);
+                }
+              }
+            }
+            
+            setAllReviews(allReviews);
           }
         }
-        
-        setAllReviews(allReviews);
       };
       
       loadReviews();
@@ -323,7 +390,7 @@ const VendorProfile = () => {
   });
 
   // Loading state
-  if (profileLoading || ordersLoading) {
+  if (isInitializing || profileLoading || ordersLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <VendorHeader
@@ -334,7 +401,9 @@ const VendorProfile = () => {
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading profile...</p>
+            <p className="mt-4 text-gray-600">
+              {isInitializing ? "Initializing profile and orders..." : "Loading profile..."}
+            </p>
           </div>
         </div>
       </div>
@@ -456,7 +525,7 @@ const VendorProfile = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              {t("vendor.myReviews")} ({reviews.length + allReviews.length})
+                              {t("common.myReviews")} ({reviews.length + allReviews.length})
             </button>
           </nav>
         </div>
@@ -464,6 +533,28 @@ const VendorProfile = () => {
         {/* Content based on active tab */}
         {activeTab === "profile" && (
           <>
+            {/* Refresh Data Button */}
+            <div className="mb-6 flex justify-end">
+              <button
+                onClick={() => {
+                  setHasInitialized(false);
+                  setIsInitializing(true);
+                  // This will trigger the useEffect to fetch data again
+                }}
+                disabled={isInitializing}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isInitializing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline"></div>
+                    {t("common.refreshing")}
+                  </>
+                ) : (
+                  t("common.refreshData")
+                )}
+              </button>
+            </div>
+
             {/* Quick Actions */}
             <div className="mb-8">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -951,11 +1042,17 @@ const VendorProfile = () => {
             {/* Debug info */}
             <div className="mb-4 p-4 bg-gray-100 rounded-lg">
               <p className="text-sm text-gray-600">
-                Total orders: {realOrders.length} | Filtered orders: {filteredOrders.length} | Active tab: {activeTab}
+                Total orders: {realOrders.length} | Filtered orders: {filteredOrders.length} | Active tab: {activeTab} | 
+                Initializing: {hasInitialized ? 'No' : 'Yes'} | Loading: {isInitializing ? 'Yes' : 'No'}
               </p>
               {realOrders.length > 0 && (
                 <p className="text-xs text-gray-500 mt-1">
                   Sample order: {realOrders[0]._id} - {realOrders[0].status} - ₹{realOrders[0].totalAmount}
+                </p>
+              )}
+              {realOrders.length === 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  No orders found. This could be because: 1) No orders exist yet, 2) Data is still loading, 3) There was an error fetching data.
                 </p>
               )}
             </div>
@@ -998,6 +1095,13 @@ const VendorProfile = () => {
                         {order.quantity * (order.materialId?.pricePerUnit || 0)}
                       </span>
                     </div>
+                    {/* Debug info for material */}
+                    {(!order.materialId?.name || order.materialId?.pricePerUnit === 0) && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs text-yellow-800">
+                        <p>⚠️ {t("common.materialDetailsIncomplete")}</p>
+                        <p>{t("common.contactSupport")}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1062,9 +1166,19 @@ const VendorProfile = () => {
                   </button>
                   {order.status === "delivered" && (
                     <button
-                      onClick={() => {
-                        setShowReviewForm(order._id || order.id);
-                        setReviewForm({ rating: 5, comment: "" });
+                      onClick={async () => {
+                        try {
+                          // Refresh order data before opening review form
+                          await fetchVendorOrders();
+                          
+                          setShowReviewForm(order._id || order.id);
+                          setReviewForm({ rating: 5, comment: "" });
+                        } catch (error) {
+                          console.error('❌ Failed to refresh order data:', error);
+                          // Still open review form even if refresh fails
+                          setShowReviewForm(order._id || order.id);
+                          setReviewForm({ rating: 5, comment: "" });
+                        }
                       }}
                       className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700 transition-colors duration-200"
                     >
@@ -1112,10 +1226,10 @@ const VendorProfile = () => {
               <div className="text-center py-12">
                 <div className="text-4xl mb-4">⭐</div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {t("vendor.noReviewsYet")}
+                  {t("common.noReviewsYet")}
                 </h3>
                 <p className="text-gray-500">
-                  {t("vendor.reviewDeliveredOrders")}
+                  {t("common.reviewDeliveredOrders")}
                 </p>
               </div>
             ) : (
@@ -1160,12 +1274,15 @@ const VendorProfile = () => {
                 {allReviews.map((review, index) => (
                   <div key={`api-${review._id || index}`} className="bg-white rounded-lg shadow p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <div>
+                      <div className="flex-1">
                         <h4 className="text-lg font-medium text-gray-900">
-                          {review.supplierId?.fullname || "Supplier"}
+                          {review.supplierId?.fullname || review.supplierId?.businessName || "Supplier"}
                         </h4>
                         <p className="text-sm text-gray-500">
                           Material: {review.materialId?.name || "Unknown"}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Order: {review.orderId || "N/A"}
                         </p>
                       </div>
                       <div className="flex items-center">
@@ -1189,8 +1306,13 @@ const VendorProfile = () => {
                         <p className="text-gray-700">{review.comment}</p>
                       </div>
                     )}
-                    <div className="mt-2 text-xs text-gray-500">
-                      {review.createdAt && new Date(review.createdAt).toLocaleDateString()}
+                    <div className="mt-3 flex justify-between items-center text-xs text-gray-500">
+                      <span>
+                        {review.createdAt && new Date(review.createdAt).toLocaleDateString()}
+                      </span>
+                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                        Submitted
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -1348,42 +1470,73 @@ const VendorProfile = () => {
                 />
                 <div className="flex space-x-2">
                   <button
-                                          onClick={async () => {
-                        try {
-                          const order = realOrders.find((o) => o._id === showReviewForm);
-                          if (!order) {
-                            toast.error("Order not found!");
+                    onClick={async () => {
+                      try {
+                        const order = realOrders.find((o) => o._id === showReviewForm);
+                        if (!order) {
+                          toast.error(t("common.orderNotFound"));
+                          return;
+                        }
+
+                                                  // Get order structure for review
+
+                        // Try to get complete order details if materialId is missing
+                        let materialId = order.materialId?._id || order.materialId;
+                        let supplierId = order.supplierId?._id || order.supplierId;
+
+                        // If materialId is missing, try to fetch order details from API
+                        if (!materialId || !supplierId) {
+                          try {
+                            const orderDetails = await vendorAPI.getOrderDetails(order._id);
+                            
+                            if (orderDetails.data) {
+                              materialId = orderDetails.data.materialId?._id || orderDetails.data.materialId;
+                              supplierId = orderDetails.data.supplierId?._id || orderDetails.data.supplierId;
+                            }
+                          } catch (apiError) {
+                            console.error('❌ Failed to fetch order details:', apiError);
+                          }
+                        }
+
+                        // Prepare review data according to the Review model
+                        const reviewData = {
+                          materialId: materialId,
+                          supplierId: supplierId,
+                          rating: reviewForm.rating,
+                          comment: reviewForm.comment,
+                        };
+
+                                                  // Validate required fields
+                          if (!reviewData.materialId) {
+                            toast.error(t("common.materialIdMissing"));
                             return;
                           }
-
-                          // Prepare review data according to the Review model
-                          const reviewData = {
-                            materialId: order.materialId?._id,
-                            supplierId: order.supplierId?._id,
+                          if (!reviewData.supplierId) {
+                            toast.error(t("common.supplierIdMissing"));
+                            return;
+                          }
+                        
+                        // Submit review to API
+                        await createReview(reviewData);
+                        
+                        // Add to local reviews state
+                        setReviews((r) => [
+                          ...r,
+                          {
+                            orderId: showReviewForm,
+                            supplier: order?.supplierId?.fullname || order?.supplierId?.businessName || "Supplier",
                             rating: reviewForm.rating,
                             comment: reviewForm.comment,
-                          };
-                          
-                          // Submit review to API
-                          await createReview(reviewData, user.token);
-                          
-                          // Add to local reviews state
-                          setReviews((r) => [
-                            ...r,
-                            {
-                              orderId: showReviewForm,
-                              supplier: order?.supplierId?.fullname || "Supplier",
-                              rating: reviewForm.rating,
-                              comment: reviewForm.comment,
-                            },
-                          ]);
-                          
-                          toast.success("Review submitted successfully!");
-                          setShowReviewForm(null);
-                        } catch (error) {
-                          toast.error("Failed to submit review: " + error.message);
-                        }
-                      }}
+                          },
+                        ]);
+                        
+                                                  toast.success(t("common.reviewSubmittedSuccessfully"));
+                        setShowReviewForm(null);
+                      } catch (error) {
+                        console.error('❌ Review submission error:', error);
+                                                  toast.error(t("common.failedToSubmitReview") + ": " + error.message);
+                      }
+                    }}
                     className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors duration-200"
                   >
                     {t("vendor.submitFeedbackButton")}

@@ -8,6 +8,7 @@ export const useSupplierStore = create(
       // State
       profile: null,
       materials: [],
+      suppliers: [], // Add suppliers state
       dashboardStats: null,
       inventory: null,
       customers: null,
@@ -24,6 +25,20 @@ export const useSupplierStore = create(
         try {
           const response = await supplierAPI.getProfile();
           set({ profile: response.data, loading: false });
+          return response.data;
+        } catch (error) {
+          set({ error: error.message, loading: false });
+          throw error;
+        }
+      },
+
+      // Add fetchSuppliers function
+      fetchSuppliers: async () => {
+        set({ loading: true, error: null });
+        
+        try {
+          const response = await supplierAPI.getSuppliers();
+          set({ suppliers: response.data || [], loading: false });
           return response.data;
         } catch (error) {
           set({ error: error.message, loading: false });

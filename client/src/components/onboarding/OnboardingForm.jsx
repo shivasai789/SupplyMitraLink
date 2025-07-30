@@ -6,6 +6,7 @@ import { useSupplierStore } from '../../stores/useSupplierStore';
 import { useVendorStore } from '../../stores/useVendorStore';
 import { toast } from 'react-hot-toast';
 import Loader from '../common/Loader';
+import LocationPicker from '../common/LocationPicker';
 
 const OnboardingForm = () => {
   const { t } = useTranslation();
@@ -28,7 +29,12 @@ const OnboardingForm = () => {
     businessAddress: '',
     city: '',
     state: '',
-    pincode: ''
+    pincode: '',
+    
+    // Location Information
+    latitude: null,
+    longitude: null,
+    locationPermission: 'prompt'
   });
 
   const [errors, setErrors] = useState({});
@@ -40,7 +46,10 @@ const OnboardingForm = () => {
         ...prev,
         fullname: user.fullname || '',
         email: user.email || '',
-        phone: user.phone || ''
+        phone: user.phone || '',
+        latitude: user.latitude || null,
+        longitude: user.longitude || null,
+        locationPermission: user.locationPermission || 'prompt'
       }));
     }
   }, [user]);
@@ -88,6 +97,14 @@ const OnboardingForm = () => {
         [field]: ''
       }));
     }
+  };
+
+  const handleLocationChange = (location) => {
+    setFormData(prev => ({
+      ...prev,
+      latitude: location.latitude,
+      longitude: location.longitude
+    }));
   };
 
   const nextStep = () => {
@@ -224,6 +241,17 @@ const OnboardingForm = () => {
           </svg>
           {errors.phone}
         </p>}
+      </div>
+
+      {/* Location Picker */}
+      <div className="mt-8">
+        <h4 className="text-lg font-semibold text-gray-900 mb-4">Location Information</h4>
+        <LocationPicker
+          onLocationChange={handleLocationChange}
+          initialLatitude={formData.latitude}
+          initialLongitude={formData.longitude}
+          showMap={true}
+        />
       </div>
     </div>
   );

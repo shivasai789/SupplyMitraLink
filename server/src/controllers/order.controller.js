@@ -36,7 +36,7 @@ exports.getSupplierOrders = (req, res, next) => {
     }), [
         {
             path: 'vendorId',
-            select: 'fullname email phone'
+            select: 'fullname email phone businessName businessAddress city state pincode latitude longitude'
         },
         {
             path: 'materialId',

@@ -36,6 +36,40 @@ exports.updateUserProfile = (req, res, next) => {
     return updateOneByFilter(User, req => ({ _id: req.user.id }))(req, res, next);
 };
 
+// 🏪 Get All Suppliers (for vendors to browse)
+exports.getAllSuppliers = async (req, res, next) => {
+    try {
+        const suppliers = await User.find({ 
+            role: 'supplier',
+            onboardingCompleted: true 
+        }).select('fullname businessName businessType businessAddress city state pincode latitude longitude phone rating createdAt');
+
+        // Transform the data to include location information
+        const suppliersWithLocation = suppliers.map(supplier => ({
+            _id: supplier._id,
+            fullname: supplier.fullname,
+            businessName: supplier.businessName,
+            businessType: supplier.businessType,
+            businessAddress: supplier.businessAddress,
+            city: supplier.city,
+            state: supplier.state,
+            pincode: supplier.pincode,
+            latitude: supplier.latitude,
+            longitude: supplier.longitude,
+            phone: supplier.phone,
+            rating: supplier.rating || 0,
+            memberSince: supplier.createdAt
+        }));
+
+        res.status(200).json({
+            status: 'success',
+            data: suppliersWithLocation
+        });
+    } catch (error) {
+        next(new APPError(error.message, 500));
+    }
+};
+
 // 🏪 Get Supplier Details (for vendors)
 exports.getSupplierDetails = async (req, res, next) => {
     try {

@@ -39,13 +39,20 @@ const SupplierDashboard = () => {
     updateOrderStatus,
   } = useOrderStore();
 
-  // Single useEffect for data fetching - Updated for new API structure
+  // Single useEffect for data fetching - Fixed to prevent infinite re-renders
   useEffect(() => {
     if (!token) {
       return; // Let route protection handle redirect
     }
 
+    // Add a flag to prevent multiple simultaneous calls
+    let isMounted = true;
+
     const fetchDashboardData = async () => {
+      if (!isMounted) return;
+      
+
+      
       try {
         await Promise.all([
           fetchProfile(),
@@ -53,7 +60,9 @@ const SupplierDashboard = () => {
           fetchSupplierOrders(),
           fetchMapOrders()
         ]);
+
       } catch (error) {
+        console.error('❌ SupplierDashboard: Data fetch error:', error);
         // Only handle auth errors, let other errors bubble up
         if (error.message && (
           error.message.includes('not authorized') || 
@@ -69,7 +78,12 @@ const SupplierDashboard = () => {
     };
 
     fetchDashboardData();
-  }, [token, fetchProfile, fetchMaterials, fetchSupplierOrders, fetchMapOrders, logout]);
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [token]); // Only depend on token, not the functions
 
   // Loading state
   const isLoading = supplierLoading || ordersLoading;
@@ -428,7 +442,7 @@ const SupplierDashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            {t("common.welcome")}, {user?.name || "Supplier"}! 👋
+            {t("common.welcome")}, {user?.fullname || user?.name || "Supplier"}! 👋
           </h2>
           <p className="text-gray-600">
             {t("supplierDashboard.monthlySalesOverview")}

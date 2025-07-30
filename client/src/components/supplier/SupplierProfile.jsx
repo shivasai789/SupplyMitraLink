@@ -16,6 +16,7 @@ import { useOrderStore } from "../../stores/useOrderStore";
 import apiService from "../../services/api";
 import { toast } from "react-hot-toast";
 import Loader from "../common/Loader";
+import LocationPicker from "../common/LocationPicker";
 
 // Fix for default markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -39,6 +40,7 @@ const SupplierProfile = () => {
   const [profileFetched, setProfileFetched] = useState(false);
   const [materialsFetched, setMaterialsFetched] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isSavingLocation, setIsSavingLocation] = useState(false);
   const isMountedRef = useRef(true);
 
   // Use supplier store for materials and other supplier-specific data
@@ -98,7 +100,7 @@ const SupplierProfile = () => {
     };
 
     initializeData();
-  }, [user?.token, fetchMaterials, fetchOrders, getCurrentUser, updateUser]); // Include all dependencies
+  }, [user?.token]); // Only depend on token to prevent infinite re-renders
 
   // Cleanup on unmount
   useEffect(() => {
@@ -112,6 +114,8 @@ const SupplierProfile = () => {
     fullname: supplierProfile?.fullname || "",
     email: supplierProfile?.email || "",
     phone: supplierProfile?.phone || "",
+    latitude: supplierProfile?.latitude || null,
+    longitude: supplierProfile?.longitude || null,
   });
 
   // Update edit form when profile data loads
@@ -121,9 +125,11 @@ const SupplierProfile = () => {
         fullname: supplierProfile.fullname || "",
         email: supplierProfile.email || "",
         phone: supplierProfile.phone || "",
+        latitude: supplierProfile.latitude || null,
+        longitude: supplierProfile.longitude || null,
       });
     }
-  }, [supplierProfile?.fullname, supplierProfile?.email, supplierProfile?.phone]); // Only depend on specific fields that can change
+  }, [supplierProfile?.fullname, supplierProfile?.email, supplierProfile?.phone, supplierProfile?.latitude, supplierProfile?.longitude]); // Only depend on specific fields that can change
 
   // Orders data will come from the order store
 
@@ -180,6 +186,8 @@ const SupplierProfile = () => {
       city: supplierProfile?.city || "",
       state: supplierProfile?.state || "",
       pincode: supplierProfile?.pincode || "",
+      latitude: supplierProfile?.latitude || null,
+      longitude: supplierProfile?.longitude || null,
     });
     setShowEditProfile(true);
   };
@@ -219,6 +227,27 @@ const SupplierProfile = () => {
 
   const handleCancelEdit = () => {
     setShowEditProfile(false);
+  };
+
+  const handleSaveLocation = async (locationData) => {
+    setIsSavingLocation(true);
+    try {
+      const response = await updateProfile({
+        latitude: locationData.latitude,
+        longitude: locationData.longitude
+      });
+      
+      if (response?.data) {
+        // Update the user data in auth store
+        updateUser(response.data);
+        toast.success('Location saved successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving location:', error);
+      toast.error('Failed to save location. Please try again.');
+    } finally {
+      setIsSavingLocation(false);
+    }
   };
 
   const handleCloseTrack = () => {
@@ -900,6 +929,25 @@ const SupplierProfile = () => {
                       />
                     </div>
                   </div>
+                  
+                  {/* Location Picker */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Business Location
+                    </label>
+                    <LocationPicker
+                      initialLatitude={supplierProfile?.latitude}
+                      initialLongitude={supplierProfile?.longitude}
+                      onLocationChange={(location) => {
+                        setEditForm({ ...editForm, latitude: location.latitude, longitude: location.longitude });
+                      }}
+                      onSave={handleSaveLocation}
+                      showSaveButton={true}
+                      isSaving={isSavingLocation}
+                      showMap={true}
+                      className="mt-2"
+                    />
+                  </div>
                 </div>
                 <div className="flex space-x-3 mt-6">
                   <button
@@ -945,7 +993,7 @@ const SupplierProfile = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h4 className="text-lg font-medium text-gray-900">
-                      {order.vendor?.fullname || order.vendorName || "Unknown Vendor"}
+                      {order.vendorId?.fullname || order.vendorName || "Unknown Vendor"}
                     </h4>
                     <p className="text-sm text-gray-500">Order #{order._id || order.id}</p>
                   </div>

@@ -3,7 +3,7 @@ export { useAuthStore } from './useAuthStore';
 export { useSupplierStore } from './useSupplierStore';
 export { useVendorStore } from './useVendorStore';
 export { useOrderStore } from './useOrderStore';
-export { useCartStore } from './useCartStore';
+export { default as useCartStore } from './useCartStore';
 export { useFeedbackStore } from './useFeedbackStore';
 
 // Store initialization helper

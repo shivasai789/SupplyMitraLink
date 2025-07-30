@@ -63,7 +63,7 @@ const VendorHeader = ({ cart, showCart, setShowCart }) => {
               </h1>
               <p className="text-xs text-gray-500">{t("brand.tagline")}</p>
             </div> */}
-            <img src={logo} alt="logo" className="h-10" />
+            <img src={logo} alt="logo" className="h-8 md:h-10" />
           </button>
 
           {/* Navigation */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useTranslation } from "react-i18next";
@@ -345,7 +345,22 @@ const VendorDashboard = () => {
   const [showQuantityModal, setShowQuantityModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [hasInitialized, setHasInitialized] = useState(false);
   const navigate = useNavigate();
+
+  // Ensure component state is properly initialized on mount
+  useEffect(() => {
+    // Reset component state to default values
+    setActiveTab("overview");
+    setSearchQuery("");
+    setSelectedCategory("all");
+    setSearchResults([]);
+    setIsSearching(false);
+    setShowQuantityModal(false);
+    setSelectedProduct(null);
+    setToast({ show: false, message: '', type: 'success' });
+    setHasInitialized(false);
+  }, []); // Empty dependency array - runs only on mount
 
   // Use vendor store
   const {
@@ -355,7 +370,6 @@ const VendorDashboard = () => {
     error,
     fetchProfile,
     fetchAllMaterials,
-
   } = useVendorStore();
 
   // Use order store for vendor orders
@@ -373,11 +387,17 @@ const VendorDashboard = () => {
     fetchCartItems,
   } = useCartStore();
 
-  // Fetch data on component mount
+  // Memoize the fetch functions to prevent unnecessary re-renders
+  const memoizedFetchProfile = useCallback(fetchProfile, [fetchProfile]);
+  const memoizedFetchAllMaterials = useCallback(fetchAllMaterials, [fetchAllMaterials]);
+  const memoizedFetchVendorOrders = useCallback(fetchVendorOrders, [fetchVendorOrders]);
+  const memoizedFetchCartItems = useCallback(fetchCartItems, [fetchCartItems]);
+
+  // Fetch data on component mount - only once
   useEffect(() => {
     const { token } = useAuthStore.getState();
-    if (!token) {
-      return; // Let route protection handle redirect
+    if (!token || hasInitialized) {
+      return;
     }
 
     // Fetch initial data
@@ -387,17 +407,18 @@ const VendorDashboard = () => {
       try {
         // Fetch profile and materials in parallel
         const [profileResult, materialsResult] = await Promise.allSettled([
-          fetchProfile(),
-          fetchAllMaterials()
+          memoizedFetchProfile(),
+          memoizedFetchAllMaterials()
         ]);
 
         // Fetch orders and cart in background (non-blocking)
         Promise.allSettled([
-          fetchVendorOrders(),
-          fetchCartItems()
+          memoizedFetchVendorOrders(),
+          memoizedFetchCartItems()
         ]);
         
       } catch (error) {
+        console.error('❌ VendorDashboard: Initialization error:', error);
         // Don't logout for general errors, only auth errors
         if (error.message && (
           error.message.includes('not authorized') || 
@@ -408,35 +429,48 @@ const VendorDashboard = () => {
         )) {
           logout();
         }
-      } finally {
-        setIsInitializing(false);
-      }
+              } finally {
+          setIsInitializing(false);
+          setHasInitialized(true);
+        }
     };
 
     // Add timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
+      console.warn('⚠️ VendorDashboard: Initialization timeout reached');
       setIsInitializing(false);
+      setHasInitialized(true);
     }, 5000); // 5 second timeout
 
     fetchInitialData();
 
-    // Cleanup timeout
-    return () => clearTimeout(timeoutId);
-  }, [fetchProfile, fetchAllMaterials, logout]);
+    // Cleanup timeout and reset component state
+    return () => {
+      clearTimeout(timeoutId);
+      // Reset component-specific state
+      setActiveTab("overview");
+      setSearchQuery("");
+      setSelectedCategory("all");
+      setSearchResults([]);
+      setIsSearching(false);
+      setShowQuantityModal(false);
+      setSelectedProduct(null);
+      setToast({ show: false, message: '', type: 'success' });
+    };
+  }, [memoizedFetchProfile, memoizedFetchAllMaterials, memoizedFetchVendorOrders, memoizedFetchCartItems, logout, hasInitialized]);
 
-
-
-  // Load materials when products tab is active
+  // Load materials when products tab is active - only if not already loaded
   useEffect(() => {
-    if (activeTab === "products" && materials.length === 0 && !loading) {
-      fetchAllMaterials().catch(err => {
+    if (activeTab === "products" && materials.length === 0 && !loading && hasInitialized) {
+      
+      memoizedFetchAllMaterials().catch(err => {
         console.warn('⚠️ Materials fetch failed:', err.message);
       });
     }
-  }, [activeTab, materials.length, fetchAllMaterials, loading]);
+  }, [activeTab, materials.length, memoizedFetchAllMaterials, loading, hasInitialized]);
 
-  // Search functionality
-  const handleSearch = async (query) => {
+  // Memoized search functionality
+  const handleSearch = useCallback(async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
       setIsSearching(false);
@@ -459,151 +493,135 @@ const VendorDashboard = () => {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [materials]);
 
-  // Debounced search
+  // Debounced search - optimized
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       handleSearch(searchQuery);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, materials]);
+  }, [searchQuery, handleSearch]);
 
-  // Filter products based on search and category
-  const filteredProducts = (searchQuery.trim() ? searchResults : (materials || [])).filter((product) => {
-    const matchesCategory =
-      selectedCategory === "all" || product.category === selectedCategory;
-    return matchesCategory;
-  });
+  // Memoize filtered products to prevent unnecessary recalculations
+  const filteredProducts = useMemo(() => {
+    const productsToFilter = searchQuery.trim() ? searchResults : (materials || []);
+    return productsToFilter.filter((product) => {
+      const matchesCategory =
+        selectedCategory === "all" || product.category === selectedCategory;
+      return matchesCategory;
+    });
+  }, [searchQuery, searchResults, materials, selectedCategory]);
 
-  // Debug log for materials
-  useEffect(() => {
-    // Removed debug logs for cleaner console
-  }, [materials]);
+  // Memoize dashboard stats to prevent unnecessary recalculations
+  const dashboardStats = useMemo(() => {
+    const totalSpent = orders?.reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
+    const totalOrders = orders?.length || 0;
+    const completedOrders = orders?.filter(order => order.status === 'delivered').length || 0;
+    const pendingOrders = orders?.filter(order => ['pending', 'confirmed', 'packed', 'in_transit', 'out_for_delivery'].includes(order.status)).length || 0;
+    const suppliersConnected = orders ? [...new Set(orders.map(order => order.supplierId?.toString()))].length : 0;
 
-  // Calculate dashboard stats from real data
-  const totalSpent = orders?.reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
-  const totalOrders = orders?.length || 0;
-  const completedOrders = orders?.filter(order => order.status === 'delivered').length || 0;
-  const pendingOrders = orders?.filter(order => ['pending', 'confirmed', 'packed', 'in_transit', 'out_for_delivery'].includes(order.status)).length || 0;
-  const suppliersConnected = orders ? [...new Set(orders.map(order => order.supplierId?.toString()))].length : 0;
+    return [
+      {
+        title: t("vendorDashboard.totalPurchases"),
+        value: `₹${totalSpent.toLocaleString()}`,
+        change: "+15.2%",
+        changeType: "positive",
+        icon: (
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+            />
+          </svg>
+        ),
+      },
+      {
+        title: t("vendorDashboard.itemsPurchased"),
+        value: totalOrders.toString(),
+        change: "+8.7%",
+        changeType: "positive",
+        icon: (
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            />
+          </svg>
+        ),
+      },
+      {
+        title: t("vendorDashboard.suppliersConnected"),
+        value: suppliersConnected.toString(),
+        change: "+2",
+        changeType: "positive",
+        icon: (
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+            />
+          </svg>
+        ),
+      },
+      {
+        title: t("vendorDashboard.monthlySpending"),
+        value: `₹${(totalSpent / Math.max(1, totalOrders)).toLocaleString()}`,
+        change: "+12.3%",
+        changeType: "positive",
+        icon: (
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
+          </svg>
+        ),
+      },
+    ];
+  }, [orders, t]);
 
-  // Dashboard stats from real data
-  const dashboardStats = [
-    {
-      title: t("vendorDashboard.totalPurchases"),
-      value: `₹${totalSpent.toLocaleString()}`,
-      change: "+15.2%",
-      changeType: "positive",
-      icon: (
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-          />
-        </svg>
-      ),
-    },
-    {
-      title: t("vendorDashboard.itemsPurchased"),
-      value: totalOrders.toString(),
-      change: "+8.7%",
-      changeType: "positive",
-      icon: (
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-          />
-        </svg>
-      ),
-    },
-    {
-      title: t("vendorDashboard.suppliersConnected"),
-      value: suppliersConnected.toString(),
-      change: "+2",
-      changeType: "positive",
-      icon: (
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-          />
-        </svg>
-      ),
-    },
-    {
-      title: t("vendorDashboard.monthlySpending"),
-      value: `₹${(totalSpent / Math.max(1, totalOrders)).toLocaleString()}`,
-      change: "+12.3%",
-      changeType: "positive",
-      icon: (
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-          />
-        </svg>
-      ),
-    },
-  ];
-
-  // Categories from supplier item form
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case "Vegetables": return "🥬";
-      case "Fruits": return "🍎";
-      case "Dairy": return "🥛";
-      case "Grains": return "🌾";
-      case "Others": return "📦";
-      default: return "🌾";
-    }
-  };
-
-  // Define all available categories (same as supplier form)
-  const allCategories = [
+  // Memoize categories to prevent unnecessary re-renders
+  const categories = useMemo(() => [
     { id: "all", name: t("vendorDashboard.allCategories"), icon: "🛒" },
     { id: "Vegetables", name: t("supplier.vegetables"), icon: "🥬" },
     { id: "Fruits", name: t("supplier.fruits"), icon: "🍎" },
     { id: "Dairy", name: t("supplier.dairy"), icon: "🥛" },
     { id: "Grains", name: t("supplier.grains"), icon: "🌾" },
     { id: "Others", name: t("supplier.others"), icon: "📦" },
-  ];
+  ], [t]);
 
-  // Use all categories instead of dynamic ones
-  const categories = allCategories;
-
-  // Quick actions
-  const quickActions = [
+  // Memoize quick actions to prevent unnecessary re-renders
+  const quickActions = useMemo(() => [
     {
       title: t("vendorDashboard.searchProducts"),
       description: t("vendorDashboard.findBestSuppliers"),
@@ -690,10 +708,10 @@ const VendorDashboard = () => {
       action: () => (window.location.href = "/feedback"),
       color: "bg-orange-500",
     },
-  ];
+  ], [t]);
 
-  // Cart functions using cart store
-  const handleAddToCart = async (product, quantity) => {
+  // Memoize cart functions to prevent unnecessary re-renders
+  const handleAddToCart = useCallback(async (product, quantity) => {
     try {
       // Validate quantity against available stock
       const availableQuantity = product.availableQuantity || product.quantity || 0;
@@ -719,39 +737,39 @@ const VendorDashboard = () => {
         type: 'error'
       });
     }
-  };
+  }, [addToCartStore]);
 
-  const handleShowQuantityModal = (product) => {
+  const handleShowQuantityModal = useCallback((product) => {
     setSelectedProduct(product);
     setShowQuantityModal(true);
-  };
+  }, []);
 
-  const handleQuantityConfirm = async (quantity) => {
+  const handleQuantityConfirm = useCallback(async (quantity) => {
     if (selectedProduct) {
       await handleAddToCart(selectedProduct, quantity);
     }
-  };
+  }, [selectedProduct, handleAddToCart]);
 
-  const handleRemoveFromCart = async (productId) => {
+  const handleRemoveFromCart = useCallback(async (productId) => {
     try {
       await removeFromCartStore(productId);
     } catch (error) {
       console.error('Error removing from cart:', error);
     }
-  };
+  }, [removeFromCartStore]);
 
-  const handleCheckout = () => {
+  const handleCheckout = useCallback(() => {
     navigate("/checkout", { state: { cart: cartItems } });
-  };
+  }, [navigate, cartItems]);
 
-  const handleSupplierSelect = async (supplierId) => {
+  const handleSupplierSelect = useCallback(async (supplierId) => {
     try {
       // This function is no longer needed as materials are fetched directly
       // await fetchSupplierMaterials(supplierId, user.token); 
     } catch (error) {
       console.error("Error fetching supplier materials:", error);
     }
-  };
+  }, []);
 
   // Loading state
   const isLoading = isInitializing || loading;
@@ -884,13 +902,13 @@ const VendorDashboard = () => {
 
         {/* Tab Content */}
         {activeTab === "overview" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-6">
             {/* Quick Actions */}
-            <div className="lg:col-span-1">
+            <div className="w-full ">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 {t("vendorDashboard.quickActions")}
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {quickActions.map((action, index) => (
                   <button
                     key={index}
@@ -921,7 +939,7 @@ const VendorDashboard = () => {
                 {t("vendorDashboard.nearbySuppliers")}
               </h3>
               <div className="bg-white rounded-lg shadow p-6">
-                <VendorMap nearbySuppliers={[]} /> {/* Placeholder for nearbySuppliers */}
+                <VendorMap />
               </div>
             </div>
           </div>

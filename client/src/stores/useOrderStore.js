@@ -11,6 +11,8 @@ const useOrderStore = create((set, get) => ({
   orderStats: null,
   loading: false,
   error: null,
+  isFetching: false, // Add flag to prevent multiple simultaneous calls
+  lastFetchTime: null, // Track when last fetch was made
 
   // Actions
   setLoading: (loading) => set({ loading }),
@@ -43,8 +45,25 @@ const useOrderStore = create((set, get) => ({
 
   // Get all supplier orders
   fetchSupplierOrders: async () => {
+    const state = get();
+    const now = Date.now();
+    
+    // Check if we're already fetching
+    if (state.isFetching) {
+      console.log('⚠️ useOrderStore: fetchSupplierOrders already in progress, skipping...');
+      return;
+    }
+    
+    // Check if we fetched recently (within 5 seconds)
+    if (state.lastFetchTime && (now - state.lastFetchTime) < 5000) {
+      console.log('⚠️ useOrderStore: fetchSupplierOrders called too recently, skipping...');
+      return;
+    }
+    
+    console.log('🔄 useOrderStore: fetchSupplierOrders called');
+    set({ isFetching: true, loading: true, error: null, lastFetchTime: now });
+    
     try {
-      set({ loading: true, error: null });
       const response = await supplierAPI.getSupplierOrders();
       const ordersData = response.data || [];
       
@@ -56,19 +75,39 @@ const useOrderStore = create((set, get) => ({
       set({ 
         orders: ordersData, 
         activeOrders: activeOrdersData,
-        loading: false 
+        loading: false,
+        isFetching: false
       });
+      console.log('✅ useOrderStore: fetchSupplierOrders completed');
       return response.data;
     } catch (error) {
-      set({ error: error.message, loading: false });
+      console.error('❌ useOrderStore: fetchSupplierOrders error:', error);
+      set({ error: error.message, loading: false, isFetching: false });
       throw error;
     }
   },
 
   // Get all orders (generic function)
   fetchOrders: async () => {
+    const state = get();
+    const now = Date.now();
+    
+    // Check if we're already fetching
+    if (state.isFetching) {
+      console.log('⚠️ useOrderStore: fetchOrders already in progress, skipping...');
+      return;
+    }
+    
+    // Check if we fetched recently (within 5 seconds)
+    if (state.lastFetchTime && (now - state.lastFetchTime) < 5000) {
+      console.log('⚠️ useOrderStore: fetchOrders called too recently, skipping...');
+      return;
+    }
+    
+    console.log('🔄 useOrderStore: fetchOrders called');
+    set({ isFetching: true, loading: true, error: null, lastFetchTime: now });
+    
     try {
-      set({ loading: true, error: null });
       const response = await supplierAPI.getSupplierOrders();
       const ordersData = response.data || [];
       
@@ -80,11 +119,14 @@ const useOrderStore = create((set, get) => ({
       set({ 
         orders: ordersData, 
         activeOrders: activeOrdersData,
-        loading: false 
+        loading: false,
+        isFetching: false
       });
+      console.log('✅ useOrderStore: fetchOrders completed');
       return response.data;
     } catch (error) {
-      set({ error: error.message, loading: false });
+      console.error('❌ useOrderStore: fetchOrders error:', error);
+      set({ error: error.message, loading: false, isFetching: false });
       throw error;
     }
   },
@@ -276,8 +318,16 @@ const useOrderStore = create((set, get) => ({
 
   // Get map orders (generic function)
   fetchMapOrders: async () => {
+    const state = get();
+    if (state.isFetching) {
+      console.log('⚠️ useOrderStore: fetchMapOrders already in progress, skipping...');
+      return;
+    }
+    
+    console.log('🔄 useOrderStore: fetchMapOrders called');
+    set({ isFetching: true, loading: true, error: null });
+    
     try {
-      set({ loading: true, error: null });
       const response = await supplierAPI.getSupplierOrders();
       const ordersData = response.data || [];
       
@@ -287,10 +337,12 @@ const useOrderStore = create((set, get) => ({
         order?.vendorAddressId
       );
       
-      set({ mapOrders: mapOrdersData, loading: false });
+      set({ mapOrders: mapOrdersData, loading: false, isFetching: false });
+      console.log('✅ useOrderStore: fetchMapOrders completed');
       return mapOrdersData;
     } catch (error) {
-      set({ error: error.message, loading: false });
+      console.error('❌ useOrderStore: fetchMapOrders error:', error);
+      set({ error: error.message, loading: false, isFetching: false });
       throw error;
     }
   },

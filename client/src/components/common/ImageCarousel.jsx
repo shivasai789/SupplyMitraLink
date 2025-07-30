@@ -25,9 +25,7 @@ const ImageCarousel = ({ images = [], alt = "Product image", className = "" }) =
   // For testing - add a fallback image if all images fail
   const testImages = processedImages.length > 0 ? processedImages : ['https://via.placeholder.com/400x400/cccccc/666666?text=No+Image'];
 
-  console.log('ImageCarousel received images:', images);
-  console.log('ImageCarousel alt:', alt);
-  console.log('ImageCarousel processed images:', processedImages);
+  
 
   // If no images, return null
   if (!processedImages || processedImages.length === 0) {
@@ -71,9 +69,8 @@ const ImageCarousel = ({ images = [], alt = "Product image", className = "" }) =
           src={displayImages[currentIndex]}
           alt={`${alt} ${currentIndex + 1}`}
           className="w-full h-full object-contain"
-          onLoad={() => console.log('Image loaded successfully:', displayImages[currentIndex])}
+          onLoad={() => {}}
           onError={(e) => {
-            console.log('Image failed to load:', displayImages[currentIndex]);
             e.target.style.display = 'none';
             e.target.nextSibling.style.display = 'flex';
           }}

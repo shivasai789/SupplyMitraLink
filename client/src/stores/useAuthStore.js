@@ -109,6 +109,9 @@ export const useAuthStore = create(
                 state: userData.state || "",
                 pincode: userData.pincode || "",
                 onboardingDate: userData.onboardingDate || null,
+                latitude: userData.latitude || null,
+                longitude: userData.longitude || null,
+                locationPermission: userData.locationPermission || 'prompt',
               };
               
               set({ 
@@ -151,6 +154,9 @@ export const useAuthStore = create(
               state: userData.state || "",
               pincode: userData.pincode || "",
               onboardingDate: userData.onboardingDate || null,
+              latitude: userData.latitude || null,
+              longitude: userData.longitude || null,
+              locationPermission: userData.locationPermission || 'prompt',
             };
             
             set({
@@ -208,6 +214,9 @@ export const useAuthStore = create(
                 state: userData.state || "",
                 pincode: userData.pincode || "",
                 onboardingDate: userData.onboardingDate || null,
+                latitude: userData.latitude || null,
+                longitude: userData.longitude || null,
+                locationPermission: userData.locationPermission || 'prompt',
               };
               
               set({
@@ -283,6 +292,9 @@ export const useAuthStore = create(
               state: updatedUserData.state || state.user?.state || "",
               pincode: updatedUserData.pincode || state.user?.pincode || "",
               onboardingDate: updatedUserData.onboardingDate || state.user?.onboardingDate || null,
+              latitude: updatedUserData.latitude || state.user?.latitude || null,
+              longitude: updatedUserData.longitude || state.user?.longitude || null,
+              locationPermission: updatedUserData.locationPermission || state.user?.locationPermission || 'prompt',
             };
             return { user: updatedUser };
           });

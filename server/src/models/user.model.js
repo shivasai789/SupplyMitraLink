@@ -70,6 +70,23 @@ const userSchema = new mongoose.Schema({
         default: ""
     },
 
+    // Location fields
+    latitude: {
+        type: Number,
+        default: null
+    },
+
+    longitude: {
+        type: Number,
+        default: null
+    },
+
+    locationPermission: {
+        type: String,
+        enum: ['granted', 'denied', 'prompt'],
+        default: 'prompt'
+    },
+
     onboardingCompleted: {
         type: Boolean,
         default: false

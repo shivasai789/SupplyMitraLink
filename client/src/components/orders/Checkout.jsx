@@ -14,7 +14,7 @@ const Checkout = () => {
   const { user } = useAuthStore();
   
   // Get cart and order data from stores
-  const { cartItems, getCartTotalAmount, clearCart } = useCartStore();
+  const { cartItems, getCartTotal, clearCart } = useCartStore();
   const { createOrder, loading: orderLoading } = useOrderStore();
   
   const [formData, setFormData] = useState({
@@ -31,10 +31,13 @@ const Checkout = () => {
   useEffect(() => {
     if (!cartItems || cartItems.length === 0) {
       navigate('/dashboard/vendor');
+    } else {
+      // Debug: Log cart items structure
+      
     }
   }, [cartItems, navigate]);
 
-  const subtotal = getCartTotalAmount();
+  const subtotal = getCartTotal();
   const deliveryFee = 50;
   const total = subtotal + deliveryFee;
 
@@ -51,14 +54,36 @@ const Checkout = () => {
     setIsSubmitting(true);
 
     try {
+      // Simple geocoding function - you might want to use a proper geocoding service
+      const getCoordinatesFromAddress = async (address) => {
+        try {
+          // For now, use default coordinates for India
+          // In a real app, you'd use a geocoding service like Google Maps API
+          return [78.9629, 20.5937]; // Default coordinates for India
+        } catch (error) {
+          console.warn('Geocoding failed, using default coordinates:', error);
+          return [78.9629, 20.5937]; // Default coordinates for India
+        }
+      };
+
+      // Get coordinates for the address
+      const coordinates = await getCoordinatesFromAddress(
+        `${formData.addressLine1}, ${formData.city}, ${formData.state}, ${formData.pincode}, India`
+      );
+
       // First, create vendor address from form data
       const vendorAddressData = {
-        street: formData.addressLine1,
+        addressLine1: formData.addressLine1,
+        addressLine2: formData.addressLine2,
         city: formData.city,
         state: formData.state,
-        pincode: formData.pincode,
-        phoneNumber: formData.phoneNumber,
-        addressLine2: formData.addressLine2
+        postalCode: formData.pincode,
+        country: 'India',
+        landmark: '',
+        location: {
+          type: 'Point',
+          coordinates: coordinates // [longitude, latitude]
+        }
       };
 
       // Create vendor address
@@ -66,20 +91,61 @@ const Checkout = () => {
       try {
         const vendorAddressResponse = await vendorAPI.createAddress(vendorAddressData);
         vendorAddressId = vendorAddressResponse.data._id;
+
       } catch (error) {
-        console.warn('Could not create vendor address:', error);
-        // Continue without address for now
+        console.error('❌ Could not create vendor address:', error);
+        toast.error('Failed to create address. Please check your address details.');
+        setIsSubmitting(false);
+        return;
       }
 
       // Create orders for each cart item
       const orderPromises = cartItems.map(async (cartItem) => {
+        // Debug: Log the cart item structure
+
+
+        // Handle different possible material ID structures
+        let materialId;
+        if (typeof cartItem.materialId === 'string') {
+          materialId = cartItem.materialId;
+        } else if (cartItem.materialId && cartItem.materialId._id) {
+          materialId = cartItem.materialId._id;
+        } else if (cartItem.materialId && cartItem.materialId.id) {
+          materialId = cartItem.materialId.id;
+        } else {
+          console.error('❌ Invalid material ID structure:', cartItem.materialId);
+          throw new Error('Invalid material ID');
+        }
+
+        // Handle different possible supplier ID structures
+        let supplierId;
+        if (typeof cartItem.supplierId === 'string') {
+          supplierId = cartItem.supplierId;
+        } else if (cartItem.supplierId && cartItem.supplierId._id) {
+          supplierId = cartItem.supplierId._id;
+        } else if (cartItem.supplierId && cartItem.supplierId.id) {
+          supplierId = cartItem.supplierId.id;
+        } else {
+          console.error('❌ Invalid supplier ID structure:', cartItem.supplierId);
+          throw new Error('Invalid supplier ID');
+        }
+
+        // Validate that we have valid IDs
+        if (!materialId || materialId === 'undefined' || materialId === 'null') {
+          throw new Error(`Invalid material ID: ${materialId}`);
+        }
+        if (!supplierId || supplierId === 'undefined' || supplierId === 'null') {
+          throw new Error(`Invalid supplier ID: ${supplierId}`);
+        }
+
         const orderData = {
-          materialId: cartItem.materialId._id,
+          materialId: materialId,
           quantity: cartItem.quantity,
-          supplierId: cartItem.supplierId._id,
+          supplierId: supplierId,
           vendorAddressId: vendorAddressId,
           supplierAddressId: undefined // We'll handle addresses later
         };
+
 
         return await createOrder(orderData);
       });
@@ -99,7 +165,23 @@ const Checkout = () => {
         }
       });
     } catch (error) {
-      toast.error('Failed to place order. Please try again.');
+      console.error('❌ Order creation failed:', error);
+      
+      // Show more specific error messages
+      if (error.message && error.message.includes('Material not found')) {
+        toast.error('One or more items in your cart are no longer available. Please refresh your cart.');
+        // Optionally redirect to cart or dashboard
+        setTimeout(() => {
+          navigate('/dashboard/vendor');
+        }, 2000);
+      } else if (error.message && error.message.includes('Invalid material ID')) {
+        toast.error('Cart contains invalid items. Please refresh your cart.');
+        setTimeout(() => {
+          navigate('/dashboard/vendor');
+        }, 2000);
+      } else {
+        toast.error('Failed to place order. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

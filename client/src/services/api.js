@@ -480,6 +480,13 @@ class ApiService {
   }
 
   /**
+   * Get reviews by user
+   */
+  async getUserReviews() {
+    return this.get('/review/user');
+  }
+
+  /**
    * Create review (Vendor only)
    */
   async createReview(reviewData) {
@@ -580,6 +587,7 @@ export const vendorAPI = {
   
   // Review APIs
   getReviews: (materialId) => apiService.getReviews(materialId),
+  getUserReviews: () => apiService.getUserReviews(),
   createReview: (reviewData) => apiService.createReview(reviewData),
   updateReview: (reviewId, updates) => apiService.updateReview(reviewId, updates),
   deleteReview: (reviewId) => apiService.deleteReview(reviewId),
@@ -591,7 +599,8 @@ export const vendorAPI = {
   updateAddress: (addressId, updates) => apiService.updateAddress(addressId, updates),
   deleteAddress: (addressId) => apiService.deleteAddress(addressId),
   
-  // Supplier detail APIs
+  // Supplier APIs
+  getSuppliers: () => apiService.get('/user/suppliers'),
   getSupplierDetails: (supplierId) => {
     return apiService.get(`/user/supplier/${supplierId}/details`);
   },
@@ -609,6 +618,9 @@ export const supplierAPI = {
   // Profile APIs
   getProfile: () => apiService.getUserProfile(),
   updateProfile: (updates) => apiService.updateUserProfile(updates),
+  
+  // Supplier listing APIs
+  getSuppliers: () => apiService.get('/user/suppliers'),
   
   // Material APIs (CRUD operations)
   getMaterials: () => apiService.getMaterials(),

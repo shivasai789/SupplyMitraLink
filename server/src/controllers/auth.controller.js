@@ -49,6 +49,9 @@ exports.signup = catchAsync(async (req, res, next) => {
         state: user.state,
         pincode: user.pincode,
         onboardingDate: user.onboardingDate,
+        latitude: user.latitude,
+        longitude: user.longitude,
+        locationPermission: user.locationPermission,
         token,
     };
     
@@ -105,6 +108,9 @@ exports.login = catchAsync(async (req, res, next) => {
         state: user.state,
         pincode: user.pincode,
         onboardingDate: user.onboardingDate,
+        latitude: user.latitude,
+        longitude: user.longitude,
+        locationPermission: user.locationPermission,
         token,
     };
     

@@ -54,7 +54,7 @@ const SupplierHeader = () => {
               </h1>
               <p className="text-xs text-gray-500">{t("brand.tagline")}</p>
             </div> */}
-            <img src={logo} alt="logo" className="h-10" />
+            <img src={logo} alt="logo" className="h-8 md:h-10" />
           </button>
 
           {/* Navigation */}
@@ -65,6 +65,7 @@ const SupplierHeader = () => {
             >
               {t("navigation.dashboard")}
             </Link>
+
             <Link
               to="/supplier/profile"
               className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"

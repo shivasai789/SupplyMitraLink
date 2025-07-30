@@ -26,6 +26,24 @@ exports.getAllReviews = (req, res, next) => {
     )(req, res, next);
 };
 
+// 🔍 Get All Reviews by User
+exports.getUserReviews = (req, res, next) => {
+    return getAllByFilter(
+        Review,
+        () => ({ userId: req.user.id }),
+        [
+            {
+                path: 'materialId',
+                select: 'name pricePerUnit unit'
+            },
+            {
+                path: 'supplierId',
+                select: 'fullname businessName'
+            }
+        ]
+    )(req, res, next);
+};
+
 
 // ➕ Create a New Review
 exports.createReview = (req, res, next) => {

@@ -10,7 +10,8 @@ const {
     getSupplierProducts, 
     getSupplierPerformance,
     searchSuppliers,
-    getAllSuppliersPerformance
+    getAllSuppliersPerformance,
+    getAllSuppliers
 } = require('../controllers/user.controller');
 const { protect, restrictTo } = require('../middlewares/auth.middleware');
 
@@ -19,6 +20,9 @@ userRouter.use(protect);
 // User profile routes
 userRouter.get('/profile', getUserProfile);
 userRouter.put('/profile', updateUserProfile);
+
+// Get all suppliers (for vendors to browse)
+userRouter.get('/suppliers', getAllSuppliers);
 
 // Admin routes (commented out - not used in current app)
 // userRouter.get('/', restrictTo('admin'), getAllUsers);

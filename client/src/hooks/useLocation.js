@@ -1,4 +1,11 @@
 import { useState, useEffect } from "react";
+import { 
+  saveLocationToStorage, 
+  getLocationFromStorage, 
+  clearLocationFromStorage,
+  calculateDistance as calculateDistanceUtil,
+  formatDistance as formatDistanceUtil
+} from "../utils/locationUtils";
 
 export function useLocation() {
   const [location, setLocation] = useState({
@@ -9,7 +16,25 @@ export function useLocation() {
   });
   const [permissionStatus, setPermissionStatus] = useState('prompt');
 
+  // Get user's saved location from localStorage
+  const getSavedLocation = () => {
+    return getLocationFromStorage();
+  };
+
   useEffect(() => {
+    // First, check if we have saved location data
+    const savedLocation = getSavedLocation();
+    if (savedLocation) {
+      setLocation({
+        latitude: savedLocation.latitude,
+        longitude: savedLocation.longitude,
+        error: null,
+        loading: false,
+      });
+      setPermissionStatus(savedLocation.permissionStatus);
+      return; // Don't request location if we have saved data
+    }
+
     if (!navigator.geolocation) {
       setLocation((prev) => ({
         ...prev,
@@ -87,31 +112,42 @@ export function useLocation() {
     });
   };
 
+  const saveLocationToStorageHook = (locationData) => {
+    return saveLocationToStorage(locationData);
+  };
+
+  const clearLocationFromStorageHook = () => {
+    return clearLocationFromStorage();
+  };
+
+  const refreshLocationFromProfile = () => {
+    const savedLocation = getSavedLocation();
+    if (savedLocation) {
+      setLocation({
+        latitude: savedLocation.latitude,
+        longitude: savedLocation.longitude,
+        error: null,
+        loading: false,
+      });
+      setPermissionStatus(savedLocation.permissionStatus);
+    }
+  };
+
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Radius of the Earth in kilometers
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distance = R * c; // Distance in kilometers
-    return distance;
+    return calculateDistanceUtil(lat1, lon1, lat2, lon2);
   };
 
   const formatDistance = (distance) => {
-    if (distance < 1) {
-      return `${Math.round(distance * 1000)}m`;
-    } else {
-      return `${distance.toFixed(1)}km`;
-    }
+    return formatDistanceUtil(distance);
   };
 
   return {
     location,
     permissionStatus,
     requestLocation,
+    refreshLocationFromProfile,
+    saveLocationToStorage: saveLocationToStorageHook,
+    clearLocationFromStorage: clearLocationFromStorageHook,
     calculateDistance,
     formatDistance,
     loading: location.loading,

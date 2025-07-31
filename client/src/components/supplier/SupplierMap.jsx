@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from '../../hooks/useLocation';
 import { useOrderStore } from '../../stores/useOrderStore';
+
 import { toast } from 'react-hot-toast';
 import Map from '../common/Map';
 import Loader from '../common/Loader';
 
 const SupplierMap = () => {
   const navigate = useNavigate();
-  const { location, permissionStatus, requestLocation, calculateDistance, formatDistance, loading, error } = useLocation();
+  const { location, permissionStatus, requestLocation, refreshLocationFromProfile, saveLocationToStorage, calculateDistance, formatDistance, loading, error } = useLocation();
   const { orders, fetchSupplierOrders, loading: ordersLoading } = useOrderStore();
+
   
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderOrigins, setOrderOrigins] = useState([]);
@@ -19,12 +21,14 @@ const SupplierMap = () => {
 
   // Debug: Log orders when they change
   useEffect(() => {
-
-  }, [orders]);
+    // Orders, filter status, or order origins updated
+  }, [orders, filterStatus, orderOrigins]);
 
   useEffect(() => {
     loadOrders();
   }, []); // Empty dependency array - only run once on mount
+
+
 
   useEffect(() => {
     if (location && location.latitude && location.longitude) {
@@ -46,7 +50,6 @@ const SupplierMap = () => {
     try {
       await fetchSupplierOrders();
     } catch (error) {
-      console.error('❌ SupplierMap: Failed to load orders:', error);
       toast.error('Failed to load orders');
     }
   };
@@ -82,33 +85,39 @@ const SupplierMap = () => {
       .filter(order => {
         // Filter by status if not 'all'
         if (filterStatus !== 'all' && order.status !== filterStatus) {
-
           return false;
         }
         
         // Check if order has vendor location data
         const hasVendorLocation = order.vendorId && order.vendorId.latitude && order.vendorId.longitude;
 
-        
-        return hasVendorLocation;
+        // For now, show all orders regardless of location data
+        // TODO: Later we can filter by location when needed
+        return true;
       })
       .map(order => {
-
+        // Check if vendor location is available
+        const hasVendorLocation = order.vendorId && order.vendorId.latitude && order.vendorId.longitude;
         
-        const distance = calculateDistance(
-          location.latitude,
-          location.longitude,
-          order.vendorId.latitude,
-          order.vendorId.longitude
-        );
+        let distance = null;
+        let formattedDistance = 'Location not available';
+        
+        if (hasVendorLocation && location && location.latitude && location.longitude) {
+          distance = calculateDistance(
+            location.latitude,
+            location.longitude,
+            order.vendorId.latitude,
+            order.vendorId.longitude
+          );
+          formattedDistance = formatDistance(distance);
+        }
         
         const orderWithDistance = {
           ...order,
           distance,
-          formattedDistance: formatDistance(distance)
+          formattedDistance
         };
         
-
         return orderWithDistance;
       })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -121,7 +130,23 @@ const SupplierMap = () => {
     const newLocation = await requestLocation();
     if (newLocation) {
       setShowLocationPrompt(false);
-      toast.success('Location access granted!');
+      
+      // Save location coordinates to localStorage
+      const locationData = {
+        latitude: newLocation.latitude,
+        longitude: newLocation.longitude,
+        permissionStatus: 'granted'
+      };
+      
+
+      
+      // Save to localStorage
+      saveLocationToStorage(locationData);
+      
+      // Refresh location from localStorage
+      refreshLocationFromProfile();
+      
+      toast.success('Location access granted and saved!');
     }
   };
 
@@ -139,14 +164,76 @@ const SupplierMap = () => {
     setSelectedOrder(null);
   };
 
+  const handleLocationSharingToggle = async (shareLocation) => {
+    if (!location || !location.latitude || !location.longitude) {
+      toast.error('Location not available');
+      return;
+    }
+
+    try {
+      if (shareLocation) {
+        // Update supplier profile with location data
+        const locationData = {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          locationShared: true
+        };
+        
+        // Update supplier profile with location data
+        const response = await fetch('/api/user/profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth-storage') ? JSON.parse(localStorage.getItem('auth-storage')).state.token : ''}`
+          },
+          body: JSON.stringify(locationData)
+        });
+        
+        if (response.ok) {
+          toast.success('Location shared with vendors! You will now appear on their map.');
+        } else {
+          throw new Error('Failed to update profile');
+        }
+      } else {
+        // Remove location from supplier profile
+        const locationData = {
+          latitude: null,
+          longitude: null,
+          locationShared: false
+        };
+        
+        // Remove location from supplier profile
+        const response = await fetch('/api/user/profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth-storage') ? JSON.parse(localStorage.getItem('auth-storage')).state.token : ''}`
+          },
+          body: JSON.stringify(locationData)
+        });
+        
+        if (response.ok) {
+          toast.success('Location sharing disabled. You will no longer appear on vendor maps.');
+        } else {
+          throw new Error('Failed to update profile');
+        }
+      }
+    } catch (error) {
+      toast.error('Failed to update location sharing settings');
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed': return 'bg-blue-100 text-blue-800';
-      case 'processing': return 'bg-purple-100 text-purple-800';
-      case 'shipped': return 'bg-indigo-100 text-indigo-800';
+      case 'accepted': return 'bg-blue-100 text-blue-800';
+      case 'preparing': return 'bg-purple-100 text-purple-800';
+      case 'packed': return 'bg-orange-100 text-orange-800';
+      case 'in_transit': return 'bg-indigo-100 text-indigo-800';
+      case 'out_for_delivery': return 'bg-green-100 text-green-800';
       case 'delivered': return 'bg-green-100 text-green-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -154,11 +241,14 @@ const SupplierMap = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'pending': return '⏳';
-      case 'confirmed': return '✅';
-      case 'processing': return '⚙️';
-      case 'shipped': return '🚚';
-      case 'delivered': return '📦';
+      case 'accepted': return '✅';
+      case 'preparing': return '⚙️';
+      case 'packed': return '📦';
+      case 'in_transit': return '🚚';
+      case 'out_for_delivery': return '🚛';
+      case 'delivered': return '🎉';
       case 'cancelled': return '❌';
+      case 'rejected': return '🚫';
       default: return '📋';
     }
   };
@@ -176,12 +266,17 @@ const SupplierMap = () => {
         <p className="text-gray-600 mb-4">
           Allow location access to see where your orders are coming from and optimize delivery routes
         </p>
-        <button
-          onClick={handleLocationRequest}
-          className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-        >
-          Enable Location
-        </button>
+        <div className="space-y-3">
+          <button
+            onClick={handleLocationRequest}
+            className="w-full px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Enable Location (Private)
+          </button>
+          <p className="text-xs text-gray-500">
+            Location will be stored locally and used for distance calculations only
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -283,21 +378,19 @@ const SupplierMap = () => {
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Order Items</h4>
                 <div className="space-y-3">
-                  {selectedOrder.items?.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{item.name || item.materialId?.name || 'Product'}</p>
-                        <p className="text-sm text-gray-600">
-                          {item.quantity} {item.unit || item.materialId?.unit || 'unit'} × ₹{item.price || item.materialId?.pricePerUnit || 0}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">
-                          ₹{(item.quantity || 0) * (item.price || item.materialId?.pricePerUnit || 0)}
-                        </p>
-                      </div>
+                  <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{selectedOrder.materialId?.name || 'Product'}</p>
+                      <p className="text-sm text-gray-600">
+                        {selectedOrder.quantity || 0} {selectedOrder.materialId?.unit || 'unit'} × ₹{selectedOrder.materialId?.pricePerUnit || 0}
+                      </p>
                     </div>
-                  ))}
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900">
+                        ₹{selectedOrder.totalAmount || 0}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -319,8 +412,11 @@ const SupplierMap = () => {
                     <span>Estimated Delivery:</span>
                     <span className="font-medium">
                       {selectedOrder.status === 'pending' ? 'To be confirmed' : 
-                       selectedOrder.status === 'confirmed' ? '2-3 business days' :
+                       selectedOrder.status === 'accepted' ? '2-3 business days' :
+                       selectedOrder.status === 'preparing' ? '1-2 business days' :
+                       selectedOrder.status === 'packed' ? 'Ready for pickup' :
                        selectedOrder.status === 'in_transit' ? '1-2 business days' :
+                       selectedOrder.status === 'out_for_delivery' ? 'Today' :
                        selectedOrder.status === 'delivered' ? 'Delivered' : 'TBD'}
                     </span>
                   </div>
@@ -389,10 +485,14 @@ const SupplierMap = () => {
         >
           <option value="all">All Orders</option>
           <option value="pending">Pending</option>
-          <option value="confirmed">Confirmed</option>
+          <option value="accepted">Accepted</option>
+          <option value="preparing">Preparing</option>
+          <option value="packed">Packed</option>
           <option value="in_transit">In Transit</option>
+          <option value="out_for_delivery">Out for Delivery</option>
           <option value="delivered">Delivered</option>
           <option value="cancelled">Cancelled</option>
+          <option value="rejected">Rejected</option>
         </select>
       </div>
 
@@ -490,16 +590,16 @@ const SupplierMap = () => {
 
               {/* Order Items Summary */}
               <div className="text-sm text-gray-600">
-                <div className="flex justify-between items-center">
-                  <span>Items:</span>
-                  <span className="font-medium">
-                    {order.items?.length || 0} {order.items?.length === 1 ? 'item' : 'items'}
+                <div className="flex justify-between items-center mb-1">
+                  <span>Material:</span>
+                  <span className="font-medium text-gray-900">
+                    {order.materialId?.name || 'N/A'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span>Quantity:</span>
                   <span className="font-medium">
-                    {order.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0} total
+                    {order.quantity || 0} {order.materialId?.unit || 'units'}
                   </span>
                 </div>
               </div>
@@ -528,8 +628,34 @@ const SupplierMap = () => {
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Map</h1>
-          <p className="text-gray-600">View your orders and their origins on the map</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Map</h1>
+              <p className="text-gray-600">View your orders and their origins on the map</p>
+            </div>
+            
+            {/* Location Sharing Toggle */}
+            {location && location.latitude && location.longitude && (
+              <div className="bg-white rounded-lg shadow p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="shareLocation"
+                      className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                      onChange={(e) => handleLocationSharingToggle(e.target.checked)}
+                    />
+                    <label htmlFor="shareLocation" className="ml-2 text-sm font-medium text-gray-700">
+                      Share my location with vendors
+                    </label>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    This will help vendors find you on their map
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Order Summary Statistics */}

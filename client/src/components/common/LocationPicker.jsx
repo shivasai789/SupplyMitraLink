@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 
 const LocationPicker = ({ 
   onLocationChange, 
+  onPermissionChange,
   initialLatitude = null, 
   initialLongitude = null,
   showMap = true,
@@ -28,6 +29,13 @@ const LocationPicker = ({
   }, []);
 
   useEffect(() => {
+    // Call permission change callback when permission status changes
+    if (permissionStatus) {
+      onPermissionChange?.(permissionStatus);
+    }
+  }, [permissionStatus, onPermissionChange]);
+
+  useEffect(() => {
     if (location.latitude && location.longitude && showMap) {
       initializeMap();
     }
@@ -45,9 +53,11 @@ const LocationPicker = ({
     try {
       const status = await locationService.getPermissionStatus();
       setPermissionStatus(status);
+      onPermissionChange?.(status);
     } catch (error) {
       console.error('Error checking permission status:', error);
       setPermissionStatus('prompt');
+      onPermissionChange?.('prompt');
     }
   };
 
@@ -56,6 +66,7 @@ const LocationPicker = ({
     try {
       const result = await locationService.requestPermission();
       setPermissionStatus(result.status);
+      onPermissionChange?.(result.status);
       
       if (result.status === 'granted' && result.location) {
         const newLocation = {
@@ -72,6 +83,7 @@ const LocationPicker = ({
       console.error('Error requesting location permission:', error);
       toast.error('Failed to get location');
       setPermissionStatus('denied');
+      onPermissionChange?.('denied');
     } finally {
       setIsLoading(false);
     }

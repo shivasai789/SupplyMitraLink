@@ -26,9 +26,9 @@ const useOrderStore = create((set, get) => ({
       const response = await vendorAPI.getVendorOrders();
       const ordersData = response.data || [];
       
-      // Filter active orders (pending, confirmed, packed, in_transit, out_for_delivery)
+      // Filter active orders (pending, preparing, packed, in_transit, out_for_delivery)
       const activeOrdersData = ordersData.filter(order => 
-        ['pending', 'confirmed', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status)
+        ['pending', 'preparing', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status)
       );
       
       set({ 
@@ -50,26 +50,22 @@ const useOrderStore = create((set, get) => ({
     
     // Check if we're already fetching
     if (state.isFetching) {
-      console.log('⚠️ useOrderStore: fetchSupplierOrders already in progress, skipping...');
       return;
     }
     
     // Check if we fetched recently (within 5 seconds)
     if (state.lastFetchTime && (now - state.lastFetchTime) < 5000) {
-      console.log('⚠️ useOrderStore: fetchSupplierOrders called too recently, skipping...');
       return;
     }
-    
-    console.log('🔄 useOrderStore: fetchSupplierOrders called');
     set({ isFetching: true, loading: true, error: null, lastFetchTime: now });
     
     try {
       const response = await supplierAPI.getSupplierOrders();
       const ordersData = response.data || [];
       
-      // Filter active orders (pending, confirmed, packed, in_transit, out_for_delivery)
+      // Filter active orders (pending, preparing, packed, in_transit, out_for_delivery)
       const activeOrdersData = ordersData.filter(order => 
-        ['pending', 'confirmed', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status)
+        ['pending', 'preparing', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status)
       );
       
       set({ 
@@ -78,10 +74,8 @@ const useOrderStore = create((set, get) => ({
         loading: false,
         isFetching: false
       });
-      console.log('✅ useOrderStore: fetchSupplierOrders completed');
       return response.data;
     } catch (error) {
-      console.error('❌ useOrderStore: fetchSupplierOrders error:', error);
       set({ error: error.message, loading: false, isFetching: false });
       throw error;
     }
@@ -94,26 +88,22 @@ const useOrderStore = create((set, get) => ({
     
     // Check if we're already fetching
     if (state.isFetching) {
-      console.log('⚠️ useOrderStore: fetchOrders already in progress, skipping...');
       return;
     }
     
     // Check if we fetched recently (within 5 seconds)
     if (state.lastFetchTime && (now - state.lastFetchTime) < 5000) {
-      console.log('⚠️ useOrderStore: fetchOrders called too recently, skipping...');
       return;
     }
-    
-    console.log('🔄 useOrderStore: fetchOrders called');
     set({ isFetching: true, loading: true, error: null, lastFetchTime: now });
     
     try {
       const response = await supplierAPI.getSupplierOrders();
       const ordersData = response.data || [];
       
-      // Filter active orders (pending, confirmed, packed, in_transit, out_for_delivery)
+      // Filter active orders (pending, preparing, packed, in_transit, out_for_delivery)
       const activeOrdersData = ordersData.filter(order => 
-        ['pending', 'confirmed', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status)
+        ['pending', 'preparing', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status)
       );
       
       set({ 
@@ -122,10 +112,8 @@ const useOrderStore = create((set, get) => ({
         loading: false,
         isFetching: false
       });
-      console.log('✅ useOrderStore: fetchOrders completed');
       return response.data;
     } catch (error) {
-      console.error('❌ useOrderStore: fetchOrders error:', error);
       set({ error: error.message, loading: false, isFetching: false });
       throw error;
     }
@@ -283,7 +271,7 @@ const useOrderStore = create((set, get) => ({
       
       // Filter orders for map display (active orders with location data)
       const mapOrdersData = ordersData.filter(order => 
-        ['pending', 'confirmed', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status) &&
+        ['pending', 'preparing', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status) &&
         order?.supplierAddressId
       );
       
@@ -304,7 +292,7 @@ const useOrderStore = create((set, get) => ({
       
       // Filter orders for map display (active orders with location data)
       const mapOrdersData = ordersData.filter(order => 
-        ['pending', 'confirmed', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status) &&
+        ['pending', 'preparing', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status) &&
         order?.vendorAddressId
       );
       
@@ -320,11 +308,8 @@ const useOrderStore = create((set, get) => ({
   fetchMapOrders: async () => {
     const state = get();
     if (state.isFetching) {
-      console.log('⚠️ useOrderStore: fetchMapOrders already in progress, skipping...');
       return;
     }
-    
-    console.log('🔄 useOrderStore: fetchMapOrders called');
     set({ isFetching: true, loading: true, error: null });
     
     try {
@@ -333,15 +318,13 @@ const useOrderStore = create((set, get) => ({
       
       // Filter orders for map display (active orders with location data)
       const mapOrdersData = ordersData.filter(order => 
-        ['pending', 'confirmed', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status) &&
+        ['pending', 'preparing', 'packed', 'in_transit', 'out_for_delivery'].includes(order?.status) &&
         order?.vendorAddressId
       );
       
       set({ mapOrders: mapOrdersData, loading: false, isFetching: false });
-      console.log('✅ useOrderStore: fetchMapOrders completed');
       return mapOrdersData;
     } catch (error) {
-      console.error('❌ useOrderStore: fetchMapOrders error:', error);
       set({ error: error.message, loading: false, isFetching: false });
       throw error;
     }
@@ -380,12 +363,14 @@ const useOrderStore = create((set, get) => ({
     const { orders } = get();
     const counts = {
       pending: 0,
-      confirmed: 0,
+      accepted: 0,
+      preparing: 0,
       packed: 0,
       in_transit: 0,
       out_for_delivery: 0,
       delivered: 0,
-      cancelled: 0
+      cancelled: 0,
+      rejected: 0
     };
 
     if (Array.isArray(orders)) {

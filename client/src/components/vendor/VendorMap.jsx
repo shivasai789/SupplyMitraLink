@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from '../../hooks/useLocation';
 import { useVendorStore } from '../../stores/useVendorStore';
+
 import { toast } from 'react-hot-toast';
 import Map from '../common/Map';
 import Loader from '../common/Loader';
@@ -10,7 +11,8 @@ import Loader from '../common/Loader';
 const VendorMap = () => {
   const navigate = useNavigate();
   const { t, ready } = useTranslation();
-  const { location, permissionStatus, requestLocation, calculateDistance, formatDistance, loading, error } = useLocation();
+  const { location, permissionStatus, requestLocation, refreshLocationFromProfile, saveLocationToStorage, calculateDistance, formatDistance, loading, error } = useLocation();
+
   
   // Safety function to ensure translation is available
   const safeT = (key, fallback) => {
@@ -42,13 +44,6 @@ const VendorMap = () => {
   }
 
   // Debug: Log supplier data
-  console.log('🔍 VendorMap Debug:', {
-    suppliersCount: suppliers.length,
-    suppliers: suppliers,
-    suppliersLoading,
-    localLoading,
-    hasSuppliers: suppliers.length > 0
-  });
 
   // Update the ref when fetchSuppliers changes
   useEffect(() => {
@@ -61,6 +56,8 @@ const VendorMap = () => {
       mountedRef.current = false;
     };
   }, []);
+
+
 
   // Single useEffect to handle all supplier and location logic
   useEffect(() => {
@@ -180,10 +177,25 @@ const VendorMap = () => {
       setShowLocationPrompt(false);
       setMapCenter(newLocation);
       
+      // Save location coordinates to localStorage
+      const locationData = {
+        latitude: newLocation.latitude,
+        longitude: newLocation.longitude,
+        permissionStatus: 'granted'
+      };
+      
+
+      
+      // Save to localStorage
+      saveLocationToStorage(locationData);
+      
+      // Refresh location from localStorage
+      refreshLocationFromProfile();
+      
+      toast.success(safeT('common.locationAccessGranted', 'Location access granted and saved!'));
+      
       // Force recalculation of suppliers with new location
       setLocalLoading(false);
-      
-      toast.success(safeT('common.locationAccessGranted', 'Location access granted!'));
     } else {
       toast.error(safeT('common.locationAccessDenied', 'Location access denied. Please enable location in your browser settings.'));
     }
@@ -527,7 +539,6 @@ const VendorMap = () => {
           <div className="space-y-3">
             <button
               onClick={() => {
-                console.log('🔄 Manual supplier fetch triggered');
                 setLocalLoading(true);
                 suppliersLoadedRef.current = false;
                 fetchSuppliersRef.current();
@@ -545,17 +556,14 @@ const VendorMap = () => {
             <button
               onClick={async () => {
                 try {
-                  console.log('🔍 Testing debug suppliers endpoint...');
                   const response = await fetch('/api/user/suppliers/debug', {
                     headers: {
                       'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                   });
                   const data = await response.json();
-                  console.log('🔍 Debug suppliers response:', data);
                   toast.success(`Found ${data.data.totalSuppliers} total suppliers, ${data.data.completedSuppliers} completed`);
                 } catch (error) {
-                  console.error('❌ Debug suppliers error:', error);
                   toast.error('Debug request failed');
                 }
               }}

@@ -263,17 +263,21 @@ const SupplierDashboard = () => {
     switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
-      case "confirmed":
+      case "accepted":
         return "bg-blue-100 text-blue-800";
-      case "packed":
+      case "preparing":
         return "bg-purple-100 text-purple-800";
-      case "in_transit":
+      case "packed":
         return "bg-orange-100 text-orange-800";
-      case "out_for_delivery":
+      case "in_transit":
         return "bg-indigo-100 text-indigo-800";
+      case "out_for_delivery":
+        return "bg-green-100 text-green-800";
       case "delivered":
         return "bg-green-100 text-green-800";
       case "cancelled":
+        return "bg-red-100 text-red-800";
+      case "rejected":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -284,8 +288,10 @@ const SupplierDashboard = () => {
     switch (status) {
       case "pending":
         return "Pending";
-      case "confirmed":
-        return "Confirmed";
+      case "accepted":
+        return "Accepted";
+      case "preparing":
+        return "Preparing";
       case "packed":
         return "Packed";
       case "in_transit":
@@ -296,61 +302,65 @@ const SupplierDashboard = () => {
         return "Delivered";
       case "cancelled":
         return "Cancelled";
+      case "rejected":
+        return "Rejected";
       default:
         return status;
     }
   };
 
   const handleOrderAction = async (orderId, action) => {
-    if (!user?.token) return;
-
     try {
       let newStatus = "";
       let note = "";
 
       switch (action) {
         case "accept":
-          newStatus = "confirmed";
+          newStatus = "accepted";
           note = "Order accepted by supplier";
           break;
         case "reject":
-          newStatus = "cancelled";
+          newStatus = "rejected";
           note = "Order rejected by supplier";
           break;
         case "pack":
-          newStatus = "packed";
-          note = "Items packed and ready";
+          newStatus = "preparing";
+          note = "Items being prepared";
           break;
         case "start-transit":
-          newStatus = "in_transit";
-          note = "Order picked up for delivery";
+          newStatus = "packed";
+          note = "Items packed and ready for transit";
           break;
         case "out-delivery":
-          newStatus = "out_for_delivery";
-          note = "Out for delivery";
+          newStatus = "in_transit";
+          note = "Order in transit";
           break;
         case "mark-delivered":
-          newStatus = "delivered";
-          note = "Order delivered successfully";
+          newStatus = "out_for_delivery";
+          note = "Out for delivery";
           break;
         default:
           return;
       }
 
-      await updateOrderStatus(orderId, newStatus, note, user.token);
+      await updateOrderStatus(orderId, newStatus, note);
 
       // Show success message
       const actionMessages = {
-        accept: "Order accepted and moved to active orders!",
-        reject: "Order rejected!",
-        pack: "Order marked as packed!",
-        "start-transit": "Order marked as in transit!",
-        "out-delivery": "Order marked as out for delivery!",
-        "mark-delivered": "Order marked as delivered!",
+        accept: "Order accepted and moved to history!",
+        reject: "Order rejected and moved to history!",
+        pack: "Order marked as preparing!",
+        "start-transit": "Order marked as packed!",
+        "out-delivery": "Order marked as in transit!",
+        "mark-delivered": "Order marked as out for delivery!",
       };
 
       toast.success(actionMessages[action] || "Order status updated!");
+      
+      // Refresh orders after status update
+      await fetchSupplierOrders();
     } catch (error) {
+      console.error('Order action error:', error);
       toast.error("Failed to update order status. Please try again.");
     }
   };
@@ -363,11 +373,11 @@ const SupplierDashboard = () => {
     switch (activeTab) {
       case "active":
         return safeOrders.filter(order => 
-          ['pending', 'confirmed', 'packed', 'in_transit', 'out_for_delivery'].includes(order.status)
+          ['pending', 'preparing', 'packed', 'in_transit', 'out_for_delivery'].includes(order.status)
         );
       case "history":
         return safeOrders.filter(order => 
-          ['delivered', 'cancelled'].includes(order.status)
+          ['accepted', 'delivered', 'cancelled', 'rejected'].includes(order.status)
         );
       default:
         return [];
@@ -527,7 +537,7 @@ const SupplierDashboard = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              Active Orders ({Array.isArray(orders) ? orders.filter(order => ['pending', 'confirmed', 'packed', 'in_transit', 'out_for_delivery'].includes(order.status)).length : 0})
+                              Active Orders ({Array.isArray(orders) ? orders.filter(order => ['pending', 'preparing', 'packed', 'in_transit', 'out_for_delivery'].includes(order.status)).length : 0})
             </button>
             <button
               onClick={() => setActiveTab("history")}
@@ -537,7 +547,7 @@ const SupplierDashboard = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              Orders History ({Array.isArray(orders) ? orders.filter(order => ['delivered', 'cancelled'].includes(order.status)).length : 0})
+                              Orders History ({Array.isArray(orders) ? orders.filter(order => ['accepted', 'delivered', 'cancelled', 'rejected'].includes(order.status)).length : 0})
             </button>
           </nav>
         </div>
@@ -676,10 +686,20 @@ const SupplierDashboard = () => {
                             </button>
                           </>
                         )}
-                        {order.status === "confirmed" && (
+                        {order.status === "accepted" && (
                           <button
                             onClick={() => handleOrderAction(order._id || order.id, "pack")}
                             className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                          >
+                            Start Preparing
+                          </button>
+                        )}
+                        {order.status === "preparing" && (
+                          <button
+                            onClick={() =>
+                              handleOrderAction(order._id || order.id, "start-transit")
+                            }
+                            className="bg-orange-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-700 transition-colors"
                           >
                             Mark as Packed
                           </button>
@@ -687,9 +707,9 @@ const SupplierDashboard = () => {
                         {order.status === "packed" && (
                           <button
                             onClick={() =>
-                              handleOrderAction(order._id || order.id, "start-transit")
+                              handleOrderAction(order._id || order.id, "out-delivery")
                             }
-                            className="bg-orange-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-700 transition-colors"
+                            className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700 transition-colors"
                           >
                             Start Transit
                           </button>
@@ -697,21 +717,11 @@ const SupplierDashboard = () => {
                         {order.status === "in_transit" && (
                           <button
                             onClick={() =>
-                              handleOrderAction(order._id || order.id, "out-delivery")
-                            }
-                            className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-purple-700 transition-colors"
-                          >
-                            Out for Delivery
-                          </button>
-                        )}
-                        {order.status === "out_for_delivery" && (
-                          <button
-                            onClick={() =>
                               handleOrderAction(order._id || order.id, "mark-delivered")
                             }
                             className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors"
                           >
-                            Mark Delivered
+                            Out for Delivery
                           </button>
                         )}
                       </div>

@@ -429,7 +429,17 @@ const SupplierItems = () => {
                             src={imageUrl}
                             alt={`Uploaded ${index + 1}`}
                             className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
                           />
+                          <div 
+                            className="w-full h-24 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 text-xs"
+                            style={{ display: 'none' }}
+                          >
+                            Image not available
+                          </div>
                           <button
                             onClick={() => handleRemoveUploadedImage(index)}
                             className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
@@ -547,6 +557,9 @@ const SupplierItems = () => {
                                 src={imageUrl}
                                 alt={`Product ${index + 1}`}
                                 className="w-8 h-8 object-cover rounded border border-gray-200"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
                               />
                             ))}
                             {item.images.length > 3 && (

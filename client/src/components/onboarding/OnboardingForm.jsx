@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useSupplierStore } from '../../stores/useSupplierStore';
 import { useVendorStore } from '../../stores/useVendorStore';
+import { useLocation } from '../../hooks/useLocation';
 import { toast } from 'react-hot-toast';
 import Loader from '../common/Loader';
 import LocationPicker from '../common/LocationPicker';
@@ -14,6 +15,7 @@ const OnboardingForm = () => {
   const { user, updateUser } = useAuthStore();
   const { updateProfile: updateSupplierProfile } = useSupplierStore();
   const { updateProfile: updateVendorProfile } = useVendorStore();
+  const { saveLocationToStorage } = useLocation();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -42,14 +44,25 @@ const OnboardingForm = () => {
   // Initialize form with user data if available
   useEffect(() => {
     if (user) {
+      // Get saved location from localStorage
+      let savedLocation = null;
+      try {
+        const locationData = localStorage.getItem('user-location');
+        if (locationData) {
+          savedLocation = JSON.parse(locationData);
+        }
+      } catch (error) {
+        // Error getting saved location
+      }
+
       setFormData(prev => ({
         ...prev,
         fullname: user.fullname || '',
         email: user.email || '',
         phone: user.phone || '',
-        latitude: user.latitude || null,
-        longitude: user.longitude || null,
-        locationPermission: user.locationPermission || 'prompt'
+        latitude: savedLocation?.latitude || user.latitude || null,
+        longitude: savedLocation?.longitude || user.longitude || null,
+        locationPermission: savedLocation?.permissionStatus || user.locationPermission || 'prompt'
       }));
     }
   }, [user]);
@@ -64,6 +77,11 @@ const OnboardingForm = () => {
         if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
         if (formData.phone && !/^[0-9]{10}$/.test(formData.phone.replace(/\D/g, ''))) {
           newErrors.phone = 'Please enter a valid 10-digit phone number';
+        }
+        
+        // Location validation
+        if (!formData.latitude || !formData.longitude) {
+          newErrors.location = 'Please select your location on the map';
         }
         break;
 
@@ -105,6 +123,21 @@ const OnboardingForm = () => {
       latitude: location.latitude,
       longitude: location.longitude
     }));
+    
+    // Clear location error when user selects a location
+    if (errors.location) {
+      setErrors(prev => ({
+        ...prev,
+        location: ''
+      }));
+    }
+  };
+
+  const handleLocationPermissionChange = (permissionStatus) => {
+    setFormData(prev => ({
+      ...prev,
+      locationPermission: permissionStatus
+    }));
   };
 
   const nextStep = () => {
@@ -125,6 +158,16 @@ const OnboardingForm = () => {
     setLoading(true);
     
     try {
+      // Save location to localStorage if available
+      if (formData.latitude && formData.longitude) {
+        const locationData = {
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          permissionStatus: formData.locationPermission || 'granted'
+        };
+        saveLocationToStorage(locationData);
+      }
+
       const profileData = {
         ...formData,
         onboardingCompleted: true,
@@ -248,10 +291,17 @@ const OnboardingForm = () => {
         <h4 className="text-lg font-semibold text-gray-900 mb-4">Location Information</h4>
         <LocationPicker
           onLocationChange={handleLocationChange}
+          onPermissionChange={handleLocationPermissionChange}
           initialLatitude={formData.latitude}
           initialLongitude={formData.longitude}
           showMap={true}
         />
+        {errors.location && <p className="text-red-500 text-sm mt-2 flex items-center">
+          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          {errors.location}
+        </p>}
       </div>
     </div>
   );

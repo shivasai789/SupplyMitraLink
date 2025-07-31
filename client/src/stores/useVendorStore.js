@@ -34,7 +34,6 @@ export const useVendorStore = create(
         
         // Prevent duplicate requests
         if (state.isFetching.profile) {
-          console.log('🔄 useVendorStore: fetchProfile - already fetching, returning cached data');
           return state.profile;
         }
         
@@ -43,11 +42,8 @@ export const useVendorStore = create(
         const cacheTime = 5 * 60 * 1000; // 5 minutes
         if (state.profile && state.lastFetchTime.profile && 
             (now - state.lastFetchTime.profile) < cacheTime) {
-          console.log('💾 useVendorStore: fetchProfile - cache hit, returning cached data');
           return state.profile;
         }
-        
-        console.log('📡 useVendorStore: fetchProfile - making API call');
         set({ 
           loading: true, 
           error: null,
@@ -56,7 +52,6 @@ export const useVendorStore = create(
         
         try {
           const response = await vendorAPI.getProfile();
-          console.log('✅ useVendorStore: fetchProfile - API call successful');
           set({ 
             profile: response.data, 
             loading: false,
@@ -65,7 +60,6 @@ export const useVendorStore = create(
           });
           return response.data;
         } catch (error) {
-          console.error('❌ useVendorStore: fetchProfile - API call failed:', error);
           set({ 
             error: error.message, 
             loading: false,
@@ -94,7 +88,6 @@ export const useVendorStore = create(
         
         // Prevent duplicate requests
         if (state.isFetching.materials) {
-          console.log('🔄 useVendorStore: fetchAllMaterials - already fetching, returning cached data');
           return state.materials;
         }
         
@@ -103,11 +96,8 @@ export const useVendorStore = create(
         const cacheTime = 2 * 60 * 1000; // 2 minutes
         if (state.materials.length > 0 && state.lastFetchTime.materials && 
             (now - state.lastFetchTime.materials) < cacheTime) {
-          console.log('💾 useVendorStore: fetchAllMaterials - cache hit, returning cached data');
           return state.materials;
         }
-        
-        console.log('📡 useVendorStore: fetchAllMaterials - making API call');
         set({ 
           loading: true, 
           error: null,
@@ -118,11 +108,6 @@ export const useVendorStore = create(
           const response = await vendorAPI.getAllMaterials();
           // Extract the data array from the API response
           const materialsData = response?.data || response || [];
-          console.log('✅ useVendorStore: fetchAllMaterials - API call successful, materials count:', materialsData.length);
-          console.log('Materials API response:', response);
-          console.log('Materials data:', materialsData);
-          console.log('First material details:', materialsData[0]);
-          console.log('All materials images:', materialsData.map(m => ({ id: m._id, name: m.name, images: m.images, imagesLength: m.images?.length })));
           set({ 
             materials: materialsData, 
             loading: false,
@@ -131,7 +116,6 @@ export const useVendorStore = create(
           });
           return response;
         } catch (error) {
-          console.error('❌ useVendorStore: fetchAllMaterials - API call failed:', error);
           set({ 
             error: error.message, 
             loading: false,
@@ -187,7 +171,6 @@ export const useVendorStore = create(
         
         // Prevent duplicate requests
         if (state.isFetching.suppliers) {
-          console.log('🔄 useVendorStore: fetchSuppliers - already fetching, returning cached data');
           return state.suppliers;
         }
         
@@ -196,11 +179,8 @@ export const useVendorStore = create(
         const cacheTime = 5 * 60 * 1000; // 5 minutes
         if (state.suppliers.length > 0 && state.lastFetchTime.suppliers && 
             (now - state.lastFetchTime.suppliers) < cacheTime) {
-          console.log('💾 useVendorStore: fetchSuppliers - cache hit, returning cached data');
           return state.suppliers;
         }
-        
-        console.log('📡 useVendorStore: fetchSuppliers - making API call');
         set({ 
           suppliersLoading: true, 
           error: null,
@@ -209,7 +189,6 @@ export const useVendorStore = create(
         
         try {
           const response = await vendorAPI.getSuppliers();
-          console.log('✅ useVendorStore: fetchSuppliers - API call successful, suppliers count:', response.data?.length || 0);
           set({ 
             suppliers: response.data || [], 
             suppliersLoading: false,
@@ -218,7 +197,6 @@ export const useVendorStore = create(
           });
           return response.data;
         } catch (error) {
-          console.error('❌ useVendorStore: fetchSuppliers - API call failed:', error);
           set({ 
             error: error.message, 
             suppliersLoading: false,

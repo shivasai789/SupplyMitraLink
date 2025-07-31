@@ -1,6 +1,28 @@
 const sharp = require('sharp');
 const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 const APPError = require('../utils/appError');
+
+// Ensure upload directory exists
+const uploadDir = path.join(__dirname, '..', '..', 'public', 'img', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Utility function to generate proper image URLs
+const generateImageUrl = (req, filename) => {
+    // Use environment variable for domain or fallback to host
+    const domain = process.env.DEPLOYED_DOMAIN || req.get('host');
+    
+    // If we have a domain, use it; otherwise, use relative path
+    if (domain) {
+        return `${req.protocol}://${domain}/public/img/uploads/${filename}`;
+    } else {
+        // Fallback to relative path
+        return `/public/img/uploads/${filename}`;
+    }
+};
 
 // === 1. Multer Setup ===
 const multerStorage = multer.memoryStorage();
@@ -29,15 +51,17 @@ exports.resizeSingleImage = async (req, res, next) => {
     req.file.filename = filename;
 
     try {
+        const filePath = path.join(uploadDir, filename);
+        
         await sharp(req.file.buffer)
             .resize(500, 500)
             .toFormat('jpeg')
             .jpeg({ quality: 90 })
-            .toFile(`public/img/uploads/${filename}`);
+            .toFile(filePath);
 
         next();
     } catch (error) {
-        next(new APPError('Error processing image', 500));
+        next(new APPError('Error processing image: ' + error.message, 500));
     }
 };
 
@@ -53,11 +77,13 @@ exports.resizeMultipleImages = async (req, res, next) => {
         await Promise.all(
             req.files.map(async (file, i) => {
                 const filename = `gallery-${Date.now()}-${i + 1}.jpeg`;
+                const filePath = path.join(uploadDir, filename);
+                
                 await sharp(file.buffer)
                     .resize(500, 500)
                     .toFormat('jpeg')
                     .jpeg({ quality: 90 })
-                    .toFile(`public/img/uploads/${filename}`);
+                    .toFile(filePath);
 
                 req.body.images.push(filename);
             })
@@ -65,15 +91,13 @@ exports.resizeMultipleImages = async (req, res, next) => {
 
         next();
     } catch (error) {
-        next(new APPError('Error processing images', 500));
+        next(new APPError('Error processing images: ' + error.message, 500));
     }
 };
 
 // === 5. Final Controllers to Send Response ===
 exports.handleSingleUpload = (req, res) => {
-    // Use environment variable for domain or fallback to host
-    const domain = process.env.DEPLOYED_DOMAIN || req.get('host');
-    const fileUrl = `${req.protocol}://${domain}/public/img/uploads/${req.file.filename}`;
+    const fileUrl = generateImageUrl(req, req.file.filename);
 
     res.status(200).json({
         status: 'success',
@@ -83,10 +107,8 @@ exports.handleSingleUpload = (req, res) => {
 
 
 exports.handleMultipleUpload = (req, res) => {
-    // Use environment variable for domain or fallback to host
-    const domain = process.env.DEPLOYED_DOMAIN || req.get('host');
     const fileUrls = req.body.images.map(filename => {
-        return `${req.protocol}://${domain}/public/img/uploads/${filename}`;
+        return generateImageUrl(req, filename);
     });
 
     res.status(200).json({

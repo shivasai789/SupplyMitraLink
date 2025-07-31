@@ -14,17 +14,30 @@ const routes = require('./routers');
 
 app.use(cors());
 app.use(express.json());
-app.use('/public', express.static(path.join(__dirname, '..', 'public')));
+// Serve static files from the public directory
+app.use('/public', express.static(path.join(__dirname, '..', 'public'), {
+  maxAge: '1d', // Cache static files for 1 day
+  etag: true,
+  lastModified: true
+}));
+
+// Add a specific route for image uploads to ensure they're served correctly
+app.use('/public/img/uploads', express.static(path.join(__dirname, '..', 'public', 'img', 'uploads'), {
+  maxAge: '7d', // Cache images for 7 days
+  etag: true,
+  lastModified: true
+}));
 
 // Connect to MongoDB
 mongoose.connect(MONGO_URI)
     .then(() => {
-        console.log('MongoDB connected');
         app.listen(PORT, () => {
-            console.log(`Server is running on http://localhost:${PORT}`);
+            // Server started successfully
         });
     })
-    .catch(err => console.error('MongoDB connection error:', err));
+    .catch(err => {
+        // MongoDB connection error
+    });
 
 app.get('/', (req, res) => {
     res.send('Welcome to SupplyMitraLink API');

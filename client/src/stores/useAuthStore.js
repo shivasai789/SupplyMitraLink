@@ -245,6 +245,7 @@ export const useAuthStore = create(
 
       logout: () => {
         localStorage.removeItem('auth-storage');
+        localStorage.removeItem('user-location'); // Clear location data on logout
         set({
           user: null,
           token: null,
